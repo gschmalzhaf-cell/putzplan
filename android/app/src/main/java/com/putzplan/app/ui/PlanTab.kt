@@ -1,16 +1,49 @@
 package com.putzplan.app.ui
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.Update
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -26,7 +59,11 @@ fun PutzplanApp(vm: PutzplanViewModel = viewModel()) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("🧹 Putzplan") },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Putzplan", style = MaterialTheme.typography.titleLarge)
+                    }
+                },
                 actions = {
                     IconButton(onClick = { zeigeEinstellungen = true }) {
                         Icon(Icons.Default.Settings, contentDescription = "Einstellungen")
@@ -39,7 +76,7 @@ fun PutzplanApp(vm: PutzplanViewModel = viewModel()) {
                 ExtendedFloatingActionButton(
                     onClick = { zeigeNeuDialog = true },
                     icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text("Aufgabe") }
+                    text = { Text("Neue Aufgabe") }
                 )
             }
         },
@@ -63,7 +100,7 @@ fun PutzplanApp(vm: PutzplanViewModel = viewModel()) {
             }
         }
     ) { padding ->
-        Box(Modifier.padding(padding)) {
+        Column(Modifier.fillMaxSize().padding(padding)) {
             when (tab) {
                 0 -> PlanTab(vm)
                 1 -> FotoTab(vm)
@@ -81,39 +118,69 @@ fun PlanTab(vm: PutzplanViewModel) {
     val plan by vm.plan.collectAsState()
     var raum by remember { mutableStateOf("alle") }
 
-    Column(Modifier.fillMaxSize().padding(12.dp)) {
-        RaumFilter(raum) { raum = it; vm.setRaumFilter(it) }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            if (plan.allesErledigt) "Alles erledigt ✅"
-            else "⏰ ${plan.gesamtMinutenOffen} Min. offen (überfällig/heute)",
-            style = MaterialTheme.typography.bodyMedium
-        )
+    Column(Modifier.fillMaxSize()) {
+        LazyRow(
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item {
+                FilterChip(
+                    selected = raum == "alle",
+                    onClick = { raum = "alle"; vm.setRaumFilter("alle") },
+                    label = { Text("Alle") }
+                )
+            }
+            items(Konstanten.RAEUME) { r ->
+                FilterChip(
+                    selected = raum == r,
+                    onClick = { raum = r; vm.setRaumFilter(r) },
+                    label = { Text(r) }
+                )
+            }
+        }
+        Surface(
+            color = if (plan.allesErledigt) MaterialTheme.colorScheme.primaryContainer
+            else MaterialTheme.colorScheme.tertiaryContainer,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                if (plan.allesErledigt) {
+                    Text(
+                        "Alles erledigt",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    Text(
+                        "Aktuell fällig",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                    Text(
+                        "${plan.gesamtMinutenOffen} Min. offen (überfällig/heute)",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(8.dp))
         if (plan.zeilen.isEmpty() && !plan.lade) {
-            Text("Keine Aufgaben für diesen Raum.")
+            Text(
+                "Keine Aufgaben für diesen Raum.",
+                Modifier.padding(horizontal = 16.dp),
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyColumn(
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                horizontal = 16.dp, vertical = 4.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             items(plan.zeilen, key = { it.id }) { z ->
                 TaskKarte(z, vm)
             }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun RaumFilter(auswahl: String, onChange: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    OutlinedButton(onClick = { expanded = true }) {
-        Text("Raum: ${if (auswahl == "alle") "Alle" else auswahl}")
-    }
-    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-        DropdownMenuItem(text = { Text("Alle / Ganze Wohnung") }, onClick = {
-            onChange("alle"); expanded = false
-        })
-        Konstanten.RAEUME.forEach { r ->
-            DropdownMenuItem(text = { Text(r) }, onClick = { onChange(r); expanded = false })
         }
     }
 }
@@ -126,31 +193,55 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = when {
-                z.ueberfaellig -> MaterialTheme.colorScheme.errorContainer
-                z.tageBis <= 2 -> MaterialTheme.colorScheme.tertiaryContainer
-                else -> MaterialTheme.colorScheme.surfaceVariant
+                z.ueberfaellig -> MaterialTheme.colorScheme.surfaceContainerHigh
+                z.tageBis <= 2 -> MaterialTheme.colorScheme.surfaceContainerHigh
+                else -> MaterialTheme.colorScheme.surfaceContainer
             }
-        )
+        ),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(Modifier.padding(12.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Raumbadge(z.raum)
+                if (z.ueberfaellig) DringlichkeitBadge("Überfällig")
+            }
             Text(z.titel, style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                listOf(
-                    z.raum,
-                    z.intervallLabel,
-                    "⏱ ${z.dauerMin} Min.",
-                    if (z.ueberfaellig) "überfällig seit ${-z.tageBis} T."
-                    else "fällig in ${z.tageBis} T.",
-                    "${z.erledigtZaehler}× erledigt"
-                ).joinToString(" · "),
-                style = MaterialTheme.typography.bodySmall
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    listOf(
+                        z.intervallLabel,
+                        "${z.dauerMin} Min.",
+                        if (z.ueberfaellig) "überfällig seit ${-z.tageBis} T."
+                        else "fällig in ${z.tageBis} T.",
+                        "${z.erledigtZaehler}× erledigt"
+                    ).joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = { zeigeAnleitung = true }) { Text("📖 Anleitung") }
-                TextButton(onClick = { zeigeDauerDialog = true }) { Text("✔ Erledigt") }
-                TextButton(onClick = { vm.ueberspringen(z.id) }) { Text("↷ später") }
-                TextButton(onClick = { vm.loeschen(z.id) }) { Text("🗑") }
+                FilledTonalButton(onClick = { zeigeDauerDialog = true }) {
+                    Icon(Icons.Default.TaskAlt, contentDescription = null)
+                    Spacer(Modifier.padding(2.dp))
+                    Text("Erledigt")
+                }
+                TextButton(onClick = { zeigeAnleitung = true }) {
+                    Icon(Icons.Default.MenuBook, contentDescription = null)
+                    Spacer(Modifier.padding(2.dp))
+                    Text("Anleitung")
+                }
+                TextButton(onClick = { vm.ueberspringen(z.id) }) {
+                    Icon(Icons.Default.Update, contentDescription = null)
+                    Spacer(Modifier.padding(2.dp))
+                    Text("später")
+                }
+                TextButton(onClick = { vm.loeschen(z.id) }) {
+                    Icon(Icons.Outlined.Delete, contentDescription = "Löschen")
+                }
             }
         }
     }
@@ -164,12 +255,12 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
 
 @Composable
 fun AnleitungDialog(z: PlanUi.PlanZeileUi, onDismiss: () -> Unit) {
-    AlertDialog(
+    androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(z.titel) },
         text = {
             Column {
-                Text("${z.raum} · ${z.intervallLabel} · ⏱ ca. ${z.dauerMin} Min.")
+                Text("${z.raum} · ${z.intervallLabel} · ca. ${z.dauerMin} Min.")
                 Spacer(Modifier.height(8.dp))
                 Text("Hilfsmittel", style = MaterialTheme.typography.titleSmall)
                 if (z.hilfsmittel.isEmpty()) Text("–")
@@ -186,11 +277,11 @@ fun AnleitungDialog(z: PlanUi.PlanZeileUi, onDismiss: () -> Unit) {
 @Composable
 fun DauerDialog(schaetzung: Int, onFertig: (Int?) -> Unit) {
     var text by remember { mutableStateOf(schaetzung.toString()) }
-    AlertDialog(
+    androidx.compose.material3.AlertDialog(
         onDismissRequest = { onFertig(null) },
         title = { Text("Dauer in Minuten") },
         text = {
-            OutlinedTextField(
+            androidx.compose.material3.OutlinedTextField(
                 value = text,
                 onValueChange = { text = it.filter { c -> c.isDigit() } },
                 label = { Text("Minuten (leer = Schätzung $schaetzung Min.)") }
@@ -205,6 +296,7 @@ fun DauerDialog(schaetzung: Int, onFertig: (Int?) -> Unit) {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NeuTaskDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
     var titel by remember { mutableStateOf("") }
@@ -214,20 +306,20 @@ fun NeuTaskDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
     var hilfsmittel by remember { mutableStateOf("") }
     var anleitung by remember { mutableStateOf("") }
 
-    AlertDialog(
+    androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Neue Aufgabe") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(titel, { titel = it }, label = { Text("Titel") })
+                androidx.compose.material3.OutlinedTextField(titel, { titel = it }, label = { Text("Titel") })
                 RaumDropdown(raum) { raum = it }
                 IntervallDropdown(intervall) { intervall = it }
-                OutlinedTextField(
+                androidx.compose.material3.OutlinedTextField(
                     dauer, { dauer = it.filter { c -> c.isDigit() } },
                     label = { Text("Dauer (Min.)") }
                 )
-                OutlinedTextField(hilfsmittel, { hilfsmittel = it }, label = { Text("Hilfsmittel (Komma)") })
-                OutlinedTextField(anleitung, { anleitung = it }, label = { Text("Anleitung") })
+                androidx.compose.material3.OutlinedTextField(hilfsmittel, { hilfsmittel = it }, label = { Text("Hilfsmittel (Komma)") })
+                androidx.compose.material3.OutlinedTextField(anleitung, { anleitung = it }, label = { Text("Anleitung") })
             }
         },
         confirmButton = {
@@ -250,12 +342,12 @@ fun NeuTaskDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
 @Composable
 fun RaumDropdown(auswahl: String, onChange: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    OutlinedButton(onClick = { expanded = true }, Modifier.fillMaxWidth()) {
+    androidx.compose.material3.OutlinedButton(onClick = { expanded = true }, Modifier.fillMaxWidth()) {
         Text("Raum: $auswahl")
     }
-    DropdownMenu(expanded, { expanded = false }) {
+    androidx.compose.material3.DropdownMenu(expanded, { expanded = false }) {
         Konstanten.RAEUME.forEach { r ->
-            DropdownMenuItem(text = { Text(r) }, onClick = { onChange(r); expanded = false })
+            androidx.compose.material3.DropdownMenuItem(text = { Text(r) }, onClick = { onChange(r); expanded = false })
         }
     }
 }
@@ -264,12 +356,12 @@ fun RaumDropdown(auswahl: String, onChange: (String) -> Unit) {
 @Composable
 fun IntervallDropdown(auswahl: String, onChange: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    OutlinedButton(onClick = { expanded = true }, Modifier.fillMaxWidth()) {
+    androidx.compose.material3.OutlinedButton(onClick = { expanded = true }, Modifier.fillMaxWidth()) {
         Text("Intervall: ${Konstanten.intervallLabel(auswahl)}")
     }
-    DropdownMenu(expanded, { expanded = false }) {
+    androidx.compose.material3.DropdownMenu(expanded, { expanded = false }) {
         Konstanten.INTERVALLE.forEach { i ->
-            DropdownMenuItem(text = { Text(i.label) }, onClick = { onChange(i.key); expanded = false })
+            androidx.compose.material3.DropdownMenuItem(text = { Text(i.label) }, onClick = { onChange(i.key); expanded = false })
         }
     }
 }
@@ -278,14 +370,14 @@ fun IntervallDropdown(auswahl: String, onChange: (String) -> Unit) {
 fun EinstellungenDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
     val aktuellerKey by vm.apiKey.collectAsState()
     var key by remember(aktuellerKey) { mutableStateOf(aktuellerKey) }
-    AlertDialog(
+    androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Einstellungen") },
         text = {
             Column {
                 Text("Mistral API-Key für die Foto-Analyse (pixtral):")
                 Spacer(Modifier.height(8.dp))
-                OutlinedTextField(key, { key = it }, label = { Text("API-Key") })
+                androidx.compose.material3.OutlinedTextField(key, { key = it }, label = { Text("API-Key") })
                 Text(
                     "Der Key bleibt lokal auf dem Gerät (SharedPreferences).",
                     style = MaterialTheme.typography.bodySmall
