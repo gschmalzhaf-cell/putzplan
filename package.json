@@ -1,0 +1,11 @@
+{
+  "name": "putzplan",
+  "version": "1.0.0",
+  "description": "IT-gestuetzter, lernender Putzplan",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/api.test.js"
+  }
+}
