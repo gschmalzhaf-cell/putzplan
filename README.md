@@ -1,46 +1,53 @@
-# Putzplan (IT-gestützt, lernend)
+# Putzplan – Android-App (Kotlin)
 
-Kleine Web-App ohne externe Abhängigkeiten (Node.js ≥ 18).
+Native Android-App für den Putzplan – **ohne Server**, komplett offline-fähig. Alle Daten liegen lokal in einer Room-Datenbank auf dem Gerät.
 
-## Start
+## Features
+
+- **Wochenplan**: alle fälligen/überfälligen Aufgaben, filterbar nach Raum, abhaken mit Dauer-Eingabe
+- **Lern-Logik**:
+  - gleitender Durchschnitt der tatsächlichen Dauer
+  - überschätzte/unterschätzte Aufgaben passen ihre Schätzung an (×1.1 / ×0.9)
+  - 3× übersprungen → automatisch selteneres Intervall
+- **Foto-Analyse mit Mistral Vision**: Foto aufnehmen → direkt aus der App an die Mistral-API → Aufgaben mit Priorität, Dauer, Hilfsmitteln → per Klick in den Plan übernehmen. API-Key wird in den App-Einstellungen hinterlegt (lokal gespeichert).
+- **Verlauf & Statistik**: erledigte Aufgaben pro Raum, letzte Aktionen
+- 15 Seed-Aufgaben beim ersten Start
+
+## Voraussetzungen
+
+- Android Studio (Koala oder neuer empfohlen)
+- Android SDK 34, Java 17
+
+## Bauen & Installieren
 
 ```bash
-# optional: Mistral-Vision für echte Objekterkennung
-MISTRAL_API_KEY=... MISTRAL_VISION_MODEL=pixtral-large-latest node server.js
-# ohne Key: npm start  (Foto-Tab nutzt dann die lokale Heuristik)
-# Browser: http://127.0.0.1:3000
+./gradlew assembleDebug       # APK: app/build/outputs/apk/debug/app-debug.apk
+./gradlew installDebug        # direkt auf verbundenem Gerät
 ```
 
-## Funktionen
+Oder in Android Studio: Projekt öffnen → Run ▶.
 
-- **Wochenplan** (`GET /api/plan`): alle fälligen/überfälligen Aufgaben, filterbar nach Raum (`?raum=Bad`) oder ganze Wohnung. Jede Aufgabe kann abgehakt werden.
-- **Anleitungen auf Wunsch** (`GET /api/anleitung/:id`, Button „📖 Anleitung"): Schritt-für-Schritt-Anweisung mit Hilfsmitteln und Zeitschätzung pro Aufgabe – quer durch die Wohnung oder zimmerweise.
-- **Foto-Analyse mit Mistral (Vision)**: Tab „Foto-Analyse" – das Foto wird als Base64-Data-URL an die Mistral-API (`POST /v1/chat/completions`, Modell z. B. `pixtral-large-latest`, einstellbar via `MISTRAL_VISION_MODEL`) gesendet. Das Modell erkennt Objekte, Oberflächen und Verschmutzungen, antwortet als JSON mit Beobachtungen und Aufgaben inkl. Zeitschätzung, Hilfsmitteln, Anleitung, Intervall und Priorität. Vorschläge können per Klick in den Plan übernommen werden. Ohne `MISTRAL_API_KEY` greift automatisch ein lokaler Heuristik-Fallback im Browser (Helligkeit, Kontrast, Kanten-, Dunkelanteil, Farbton).
-- **Intervalle**: täglich, wöchentlich, alle 2 Wochen, monatlich, vierteljährlich, halbjährlich, jährlich. Fälligkeit wird aus dem letzten Abschluss + Intervall berechnet.
-- **Lernen/Verlauf**: Jeder Abschluss wird protokolliert (`/api/history`), die tatsächliche Dauer fließt in die Zeitschätzung ein (gleitender Durchschnitt, Anpassung der Schätzung). Häufig erledigte Aufgaben bleiben häufig (Intervall bleibt klein); Aufgaben, die 3× übersprungen werden, rutschen automatisch in ein selteneres Intervall.
+## Release bauen (signiert)
 
-## API
-
-| Methode | Pfad | Beschreibung |
-|---|---|---|
-| GET | `/api/plan?raum=` | Plan mit Fälligkeit |
-| GET | `/api/raeume` | Räume + Intervalle |
-| GET | `/api/tasks/:id` | Aufgabe inkl. Stats |
-| GET | `/api/anleitung/:id` | Anleitung + Hilfsmittel |
-| POST | `/api/tasks/:id/erledigt` | abhaken, Body: `{dauerMin}` |
-| POST | `/api/tasks/:id/ueberspringen` | verschieben/Intervall erhöhen |
-| POST | `/api/tasks` | neue Aufgabe |
-| DELETE | `/api/tasks/:id` | löschen |
-| GET | `/api/history` | Verlauf |
-| GET | `/api/stats` | Statistik |
-| POST | `/api/foto` | Foto-Metadaten melden |
-| GET | `/api/foto-analyse/status` | prüft, ob `MISTRAL_API_KEY` gesetzt ist |
-| POST | `/api/foto-analyse` | Bild (Base64-Data-URL) an Mistral Vision, JSON-Ergebnis mit Aufgaben |
-
-Daten liegen in `data/db.json`.
-
-## Test
+Der Release wird mit dem Keystore in `keystores/putzplan-release.jks` signiert; das Passwort kommt aus der Umgebungsvariablen `ANDROID_KEYSTORE_PASSWORD` (in GitHub als Secret hinterlegt).
 
 ```bash
-npm test
+ANDROID_KEYSTORE_PASSWORD=... ./gradlew assembleRelease
+# APK: app/build/outputs/apk/release/app-release.apk
+```
+
+Releases werden automatisch gebaut, sobald ein Tag `v*` gepusht wird (siehe `.github/workflows/release.yml`) – die signierte APK wird an den GitHub-Release angehängt.
+
+## Releases
+
+Die aktuelle APK findest du unter [Releases](https://github.com/gschmalzhaf-cell/putzplan/releases) – Datei `putzplan-v<version>.apk` herunterladen, auf dem Handy öffnen und installieren („Installation aus unbekannten Quellen“ muss erlaubt sein).
+
+## Architektur
+
+```
+com.putzplan.app
+├── data/        Room: Entities, DAO, Database, Repository (Plan-Berechnung)
+├── logic/       Konstanten (Räume, Intervalle), PlanLogik (Seed, Lernen, Fälligkeit)
+├── net/         MistralVisionClient (Foto-Analyse, kotlinx.serialization)
+└── ui/          Compose UI: PlanTab, FotoTab, VerlaufTab, ViewModel, Theme
 ```
