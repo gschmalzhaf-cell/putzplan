@@ -65,3 +65,13 @@ Die Daten (`data/db.json`) liegen dann nur auf dem Handy.
 | `PORT` | `3000` | HTTP-Port des Servers |
 
 Alle weiteren Variablen (`MISTRAL_API_KEY`, `MISTRAL_VISION_MODEL`, `DATA_DIR_OVERRIDE`) siehe [INSTALLATION.md](INSTALLATION.md).
+
+## Variante 3: Native Android-App (Kotlin)
+
+Für eine echte Android-App ohne Server gibt es unter [`android/`](android/) eine komplett eigenständige Kotlin-App:
+
+- Alle Daten lokal auf dem Gerät (Room-Datenbank), kein Node-Server und kein WLAN-Rechner nötig
+- Foto-Analyse direkt aus der App über die Mistral-API (API-Key in den App-Einstellungen)
+- Lern-Logik identisch zur Web-App (gleitende Zeitschätzung, Intervall-Anpassung)
+
+Details: [android/README.md](android/README.md)

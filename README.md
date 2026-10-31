@@ -2,6 +2,8 @@
 
 Kleine Web-App ohne externe Abhängigkeiten (Node.js ≥ 18). Läuft auch als installierbare App (PWA) auf Android – siehe [ANDROID.md](ANDROID.md).
 
+**Native Android-App:** Unter [`android/`](android/) liegt zusätzlich eine komplett eigenständige Kotlin-App (Jetpack Compose, Room, Mistral Vision direkt aus der App) – ohne Server, alle Daten lokal auf dem Gerät. Siehe [android/README.md](android/README.md).
+
 ## Start
 
 ```bash
