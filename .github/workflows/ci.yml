@@ -6,25 +6,9 @@ on:
   pull_request:
 
 jobs:
-  web:
-    name: Web-App (Node Tests)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Tests ausfuehren
-        run: npm test
-
   android:
     name: Android-App (assembleDebug)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: android
     steps:
       - uses: actions/checkout@v4
 
@@ -39,12 +23,15 @@ jobs:
         with:
           gradle-version: '8.7'
 
+      - name: Gradle-Wrapper generieren
+        run: gradle wrapper --gradle-version 8.7
+
       - name: Debug-APK bauen
-        run: gradle assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: APK als Artefakt hochladen
         uses: actions/upload-artifact@v4
         with:
           name: putzplan-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14

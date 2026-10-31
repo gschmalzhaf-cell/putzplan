@@ -1,4 +1,9 @@
-/data/
-node_modules/
-*.log
-nohup.out
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+keystores/*.pass
