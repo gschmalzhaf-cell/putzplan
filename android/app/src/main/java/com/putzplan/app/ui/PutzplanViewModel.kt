@@ -18,9 +18,39 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
+
+private fun com.putzplan.app.data.Plan.toUi() = PlanUi(
+    zeilen = zeilen.map { z ->
+        PlanUi.PlanZeileUi(
+            id = z.task.id,
+            titel = z.task.titel,
+            raum = z.task.raum,
+            intervallLabel = com.putzplan.app.logic.Konstanten.intervallLabel(z.task.intervall),
+            dauerMin = z.task.dauerMin,
+            hilfsmittel = z.task.hilfsmittel.split(',').filter { it.isNotBlank() },
+            anleitung = z.task.anleitung,
+            ueberfaellig = z.ueberfaellig,
+            tageBis = z.tageBis,
+            erledigtZaehler = z.task.erledigt,
+            durchschnittDauerMin = z.task.durchschnittDauerMin
+        )
+    },
+    gesamtMinutenOffen = gesamtMinutenOffen,
+    allesErledigt = allesErledigt,
+    lade = false
+)
+
+private fun com.putzplan.app.data.HistoryEntry.toUi() = HistoryUi(
+    titel = titel,
+    raum = raum,
+    aktion = aktion,
+    dauerMin = dauerMin,
+    zeitpunkt = zeitpunkt
+)
 
 data class PlanUi(
     val zeilen: List<PlanZeileUi> = emptyList(),
@@ -79,11 +109,12 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
     @OptIn(ExperimentalCoroutinesApi::class)
     val plan: StateFlow<PlanUi> = _raumFilter
         .flatMapLatest { raum ->
-            repo.planFlow(raum)
+            repo.planFlow(raum).map { p -> p.toUi() }
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, PlanUi())
 
     val history: StateFlow<List<HistoryUi>> = repo.history
+        .map { liste -> liste.map { it.toUi() } }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     init {

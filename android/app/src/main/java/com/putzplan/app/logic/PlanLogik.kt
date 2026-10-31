@@ -127,8 +127,9 @@ object PlanLogik {
     fun lerneAusAbschluss(task: Task, dauerMin: Int?): Task {
         var t = task.copy(erledigt = task.erledigt + 1, letzterAbschluss = System.currentTimeMillis())
         if (dauerMin != null && dauerMin > 0) {
-            val neuerSchnitt = if (t.durchschnittDauerMin != null)
-                Math.round((t.durchschnittDauerMin!! * (t.erledigt - 1) + dauerMin).toDouble() / t.erledigt)
+            val bisher = t.durchschnittDauerMin
+            val neuerSchnitt: Int = if (bisher != null)
+                Math.round((bisher * (t.erledigt - 1) + dauerMin).toDouble() / t.erledigt).toInt()
             else dauerMin
             t = t.copy(
                 letzteDauerMin = dauerMin,
