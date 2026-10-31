@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Putzplan</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>🧹 Putzplan</h1>
+  <nav>
+    <button class="tab active" data-tab="plan">Wochenplan</button>
+    <button class="tab" data-tab="foto">Foto-Analyse</button>
+    <button class="tab" data-tab="verlauf">Verlauf</button>
+  </nav>
+</header>
+
+<main>
+  <section id="tab-plan" class="tabpage active">
+    <div class="toolbar">
+      <label>Raum:
+        <select id="raumFilter">
+          <option value="alle">Alle / Ganze Wohnung</option>
+        </select>
+      </label>
+      <span id="gesamtInfo"></span>
+      <button id="btnNeu">+ Aufgabe</button>
+    </div>
+    <div id="planListe"></div>
+  </section>
+
+  <section id="tab-foto" class="tabpage">
+    <h2>Foto aus der Wohnung analysieren</h2>
+    <p>Lade ein Foto eines Raums hoch. <span id="fotoModus"></span> Es werden Objekte und Verschmutzungen erkannt und daraus Aufgaben mit Zeitschätzung, Hilfsmitteln und Priorität abgeleitet.</p>
+    <div class="toolbar">
+      <label>Raum:
+        <select id="fotoRaum"></select>
+      </label>
+      <input type="file" id="fotoInput" accept="image/*">
+    </div>
+    <div id="fotoPreview"></div>
+    <div id="fotoErgebnis"></div>
+  </section>
+
+  <section id="tab-verlauf" class="tabpage">
+    <h2>Verlauf &amp; Statistik</h2>
+    <div id="statsBox"></div>
+    <h3>Letzte Aktionen</h3>
+    <div id="verlaufListe"></div>
+  </section>
+</main>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose">×</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
