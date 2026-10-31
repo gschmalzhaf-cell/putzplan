@@ -276,7 +276,8 @@ fun IntervallDropdown(auswahl: String, onChange: (String) -> Unit) {
 
 @Composable
 fun EinstellungenDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
-    var key by remember(vm.apiKey) { mutableStateOf(vm.apiKey.collectAsState().value) }
+    val aktuellerKey by vm.apiKey.collectAsState()
+    var key by remember(aktuellerKey) { mutableStateOf(aktuellerKey) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Einstellungen") },
