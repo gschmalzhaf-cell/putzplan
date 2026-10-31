@@ -15,8 +15,8 @@ Native Android-App für den Putzplan – **ohne Server**, komplett offline-fähi
 
 ## Voraussetzungen
 
-- Android Studio (Koala oder neuer empfohlen)
-- Android SDK 34, Java 17
+- Aktuelles Android Studio (neueste stabile Version empfohlen)
+- Android SDK 37, Java 17
 
 ## Bauen & Installieren
 
