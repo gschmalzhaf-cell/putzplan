@@ -1,6 +1,6 @@
 # Putzplan (IT-gestützt, lernend)
 
-Kleine Web-App ohne externe Abhängigkeiten (Node.js ≥ 18).
+Kleine Web-App ohne externe Abhängigkeiten (Node.js ≥ 18). Läuft auch als installierbare App (PWA) auf Android – siehe [ANDROID.md](ANDROID.md).
 
 ## Start
 
