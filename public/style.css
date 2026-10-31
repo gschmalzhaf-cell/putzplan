@@ -1,0 +1,43 @@
+* { box-sizing: border-box; }
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background: #f4f6f8; color: #1c2733; }
+header { background: #0e7c66; color: #fff; padding: 12px 20px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+header h1 { font-size: 1.3rem; margin: 0; }
+nav { display: flex; gap: 8px; }
+.tab { background: rgba(255,255,255,.15); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: .95rem; }
+.tab.active { background: #fff; color: #0e7c66; font-weight: 600; }
+main { max-width: 900px; margin: 20px auto; padding: 0 16px; }
+.tabpage { display: none; }
+.tabpage.active { display: block; }
+.toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 12px 0; }
+select, input[type=file], button { padding: 8px 10px; border-radius: 8px; border: 1px solid #c5ced6; font-size: .95rem; }
+button { background: #0e7c66; color: #fff; border: none; cursor: pointer; }
+button.sekundar { background: #e2e8ee; color: #1c2733; }
+button:hover { filter: brightness(1.08); }
+#gesamtInfo { font-weight: 600; color: #0e7c66; }
+.karte { background: #fff; border: 1px solid #e1e7ec; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; display: flex; gap: 12px; align-items: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+.karte.ueberfaellig { border-left: 5px solid #d64545; }
+.karte.faellig { border-left: 5px solid #e6a23c; }
+.karte.ok { border-left: 5px solid #0e7c66; }
+.karte .info { flex: 1; }
+.karte h3 { margin: 0 0 4px; font-size: 1.05rem; }
+.karte .meta { font-size: .85rem; color: #5b6b7a; display: flex; gap: 10px; flex-wrap: wrap; }
+.chip { background: #eef3f6; border-radius: 999px; padding: 2px 10px; font-size: .8rem; }
+.chip.warn { background: #fdecea; color: #b23131; }
+.aktionen { display: flex; gap: 6px; flex-wrap: wrap; }
+.aktionen button { padding: 6px 10px; font-size: .85rem; }
+#fotoPreview img { max-width: 100%; max-height: 320px; border-radius: 10px; margin: 10px 0; border: 1px solid #d5dde3; }
+.ergebnis-karte { background: #fff; border: 1px solid #e1e7ec; border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
+.ergebnis-karte h4 { margin: 0 0 6px; }
+.bar { height: 8px; border-radius: 4px; background: #e6ebf0; overflow: hidden; margin: 4px 0 8px; }
+.bar > div { height: 100%; background: #0e7c66; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 10; }
+.modal.hidden { display: none; }
+.modal-box { background: #fff; border-radius: 14px; padding: 22px; max-width: 560px; width: 92%; max-height: 85vh; overflow: auto; position: relative; }
+.modal-close { position: absolute; top: 8px; right: 12px; background: none; color: #333; font-size: 1.4rem; }
+.modal-box ol, .modal-box ul { padding-left: 20px; }
+.hilfsmittel-liste li { margin-bottom: 4px; }
+#verlaufListe .eintrag, #statsBox .eintrag { background: #fff; border: 1px solid #e1e7ec; border-radius: 10px; padding: 8px 12px; margin-bottom: 6px; font-size: .9rem; }
+#statsBox { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+#statsBox .eintrag { font-weight: 600; }
+form .feld { margin-bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
+form input, form select, form textarea { padding: 8px; border: 1px solid #c5ced6; border-radius: 8px; }
