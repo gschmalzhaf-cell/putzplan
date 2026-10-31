@@ -8,6 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.DATA_DIR_OVERRIDE || path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '127.0.0.1';
 
 const INTERVALLE = {
   taeglich: { label: 'Täglich', days: 1 },
@@ -332,7 +333,7 @@ route('GET', '/api/foto-analyse/status', (req, res) => {
   res.end(JSON.stringify({ mistralVerbunden: Boolean(MISTRAL_API_KEY), model: MISTRAL_VISION_MODEL }));
 });
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.webmanifest': 'application/manifest+json' };
 
 async function serveStatic(req, res, pathname) {
   let rel = pathname === '/' ? '/index.html' : pathname;
@@ -382,6 +383,10 @@ await loadDb();
 for (const t of db.tasks) { if (!t.naechstesFaellig) { normalizeIntervall(t); recomputeFaelligkeit(t); } }
 await saveDb();
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Putzplan laeuft auf http://127.0.0.1:${PORT}`);
+server.listen(PORT, HOST, () => {
+  if (HOST === '0.0.0.0') {
+    console.log(`Putzplan laeuft auf http://<server-ip>:${PORT} (alle Schnittstellen, z. B. fuer Handy im Heimnetz)`);
+  } else {
+    console.log(`Putzplan laeuft auf http://${HOST}:${PORT}`);
+  }
 });

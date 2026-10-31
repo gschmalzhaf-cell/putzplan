@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Putzplan</title>
 <link rel="stylesheet" href="/style.css">
+<meta name="theme-color" content="#0e7c66">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body>
 <header>
@@ -37,7 +43,7 @@
       <label>Raum:
         <select id="fotoRaum"></select>
       </label>
-      <input type="file" id="fotoInput" accept="image/*">
+      <input type="file" id="fotoInput" accept="image/*" capture="environment">
     </div>
     <div id="fotoPreview"></div>
     <div id="fotoErgebnis"></div>

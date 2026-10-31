@@ -1,4 +1,8 @@
 const $ = s => document.querySelector(s);
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
+
 const api = async (pfad, opts = {}) => {
   const res = await fetch(pfad, {
     method: opts.method || 'GET',
