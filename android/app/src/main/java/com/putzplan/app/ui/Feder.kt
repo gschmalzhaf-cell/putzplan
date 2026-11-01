@@ -3,7 +3,6 @@ package com.putzplan.app.ui
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -61,17 +60,15 @@ fun Modifier.federPress(
             spotColor = schatten
         )
         .pointerInput(Unit) {
-            detectTapGestures { pos ->
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false)
                 val cx = size.width / 2f
                 val cy = size.height / 2f
-                zielX = (pos.x - cx).coerceIn(-maxOffset, maxOffset)
-                zielY = (pos.y - cy).coerceIn(-maxOffset, maxOffset)
+                zielX = (down.position.x - cx).coerceIn(-maxOffset, maxOffset)
+                zielY = (down.position.y - cy).coerceIn(-maxOffset, maxOffset)
                 zielScale = pressScale
                 zielElevation = gedruecktElevation
-                awaitEachGesture {
-                    awaitFirstDown(requireUnconsumed = false)
-                    waitForUpOrCancellation()
-                }
+                waitForUpOrCancellation()
                 zielScale = 1f
                 zielX = 0f
                 zielY = 0f
