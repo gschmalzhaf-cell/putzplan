@@ -45,6 +45,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -141,29 +142,17 @@ fun PlanTab(vm: PutzplanViewModel) {
             }
         }
         Surface(
-            color = if (plan.allesErledigt) MaterialTheme.colorScheme.primaryContainer
-            else MaterialTheme.colorScheme.tertiaryContainer,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            shape = MaterialTheme.shapes.large,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                if (plan.allesErledigt) {
-                    Text(
-                        "Alles erledigt",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                } else {
-                    Text(
-                        "Aktuell fällig",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
-                    Text(
-                        "${plan.gesamtMinutenOffen} Min. offen (überfällig/heute)",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
-                }
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                val stats by vm.stats.collectAsState()
+                FortschrittsBalken(
+                    erledigt = stats?.gesamtErledigt ?: 0,
+                    offen = plan.gesamtMinutenOffen,
+                    allesErledigt = plan.allesErledigt
+                )
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -207,10 +196,11 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
         colors = CardDefaults.cardColors(
             containerColor = when {
                 z.ueberfaellig -> MaterialTheme.colorScheme.surfaceContainerHigh
-                z.tageBis <= 2 -> MaterialTheme.colorScheme.surfaceContainerHigh
-                else -> MaterialTheme.colorScheme.surfaceContainer
+                else -> com.putzplan.app.ui.theme.raumFarbe(z.raum).copy(alpha = 0.35f)
+                    .compositeOver(MaterialTheme.colorScheme.surface)
             }
         ),
+        shape = MaterialTheme.shapes.large,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
