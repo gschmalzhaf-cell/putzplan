@@ -77,6 +77,13 @@ class Repository(private val dao: PutzplanDao) {
         dao.deleteHistoryForTask(taskId)
     }
 
+    suspend fun raumUmbenennen(alt: String, neu: String) = withContext(Dispatchers.IO) {
+        val ziel = neu.trim().ifBlank { alt }
+        if (ziel == alt) return@withContext
+        dao.renameRaumInTasks(alt, ziel)
+        dao.renameRaumInHistory(alt, ziel)
+    }
+
     suspend fun neuTask(
         titel: String, raum: String, intervall: String, dauerMin: Int,
         hilfsmittel: List<String>, anleitung: String, erstelltAus: String

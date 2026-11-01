@@ -134,6 +134,12 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
         _raumFilter.value = raum
     }
 
+    fun raumUmbenennen(alt: String, neu: String) = viewModelScope.launch {
+        repo.raumUmbenennen(alt, neu)
+        if (_raumFilter.value == alt) _raumFilter.value = "alle"
+        _stats.value = repo.stats()
+    }
+
     fun setApiKey(key: String) {
         val k = key.trim()
         prefs.edit().putString("mistral_key", k).apply()
