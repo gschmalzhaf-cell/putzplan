@@ -114,10 +114,12 @@ fun VerlaufTab(vm: PutzplanViewModel) {
                             else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(Modifier.padding(4.dp))
-                        Column {
+                        Column(Modifier.weight(1f)) {
                             Text(
                                 h.titel,
-                                style = MaterialTheme.typography.bodyLarge
+                                style = MaterialTheme.typography.bodyLarge,
+                                maxLines = 2,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                             val zeit = SimpleDateFormat("dd.MM.yy HH:mm", Locale.GERMAN)
                                 .format(Date(h.zeitpunkt))

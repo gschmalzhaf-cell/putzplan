@@ -12,14 +12,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun Raumbadge(raum: String) {
+fun Raumbadge(raum: String, modifier: Modifier = Modifier) {
     SuggestionChip(
         onClick = {},
         enabled = false,
-        label = { Text(raum) },
+        modifier = modifier,
+        label = { Text(raum, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         colors = SuggestionChipDefaults.suggestionChipColors(
             disabledContainerColor = MaterialTheme.colorScheme.secondaryContainer,
             disabledLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -33,7 +35,7 @@ fun DringlichkeitBadge(text: String) {
     SuggestionChip(
         onClick = {},
         enabled = false,
-        label = { Text(text) },
+        label = { Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         colors = SuggestionChipDefaults.suggestionChipColors(
             disabledContainerColor = MaterialTheme.colorScheme.errorContainer,
             disabledLabelColor = MaterialTheme.colorScheme.onErrorContainer
