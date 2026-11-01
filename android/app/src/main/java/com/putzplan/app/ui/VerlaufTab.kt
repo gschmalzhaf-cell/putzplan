@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -43,22 +44,59 @@ fun VerlaufTab(vm: PutzplanViewModel) {
         stats?.let { s ->
             Surface(
                 color = MaterialTheme.colorScheme.primaryContainer,
+                shape = MaterialTheme.shapes.large,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
             ) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "Gesamt erledigt: ${s.gesamtErledigt}",
+                        "Gesamt erledigt: ${s.gesamtErledigt} 🎉",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     if (s.proRaum.isNotEmpty()) {
-                        Text(
-                            s.proRaum.entries.joinToString(" · ") { "${it.key} ${it.value}×" },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                        androidx.compose.foundation.layout.FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            s.proRaum.entries.sortedByDescending { it.value }.forEach { (raum, anzahl) ->
+                                Row(verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Raumbadge(raum)
+                                    Text(
+                                        "${anzahl}×",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    val badges = streakBadges(s.gesamtErledigt)
+                    if (badges.isNotEmpty()) {
+                        Text("Erfolge", style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        androidx.compose.foundation.layout.FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            badges.forEach { (emoji, name) ->
+                                Surface(
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f),
+                                    shape = MaterialTheme.shapes.medium
+                                ) {
+                                    Row(
+                                        Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(emoji, fontSize = 18.sp)
+                                        Text(name, style = MaterialTheme.typography.labelMedium)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
