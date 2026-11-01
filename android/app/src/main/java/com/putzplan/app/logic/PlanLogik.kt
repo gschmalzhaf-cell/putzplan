@@ -5,8 +5,7 @@ import java.util.UUID
 
 object PlanLogik {
 
-    fun recomputeFaelligkeit(task: Task): Task {
-        val base = task.letzterAbschluss ?: task.erstelltAm
+    fun recomputeFaelligkeit(task: Task, base: Long = task.letzterAbschluss ?: task.erstelltAm): Task {
         val days = Konstanten.INTERVALL_MAP[task.intervall]?.days ?: 7
         return task.copy(naechstesFaellig = base + days * 86400000L)
     }
@@ -48,7 +47,7 @@ object PlanLogik {
                 t = t.copy(intervall = Konstanten.INTERVALLE[idx + 1].key, uebersprungen = 0)
             }
         }
-        return recomputeFaelligkeit(t)
+        return recomputeFaelligkeit(t, System.currentTimeMillis())
     }
 
     fun neuerTask(
@@ -69,6 +68,6 @@ object PlanLogik {
             letzteDauerMin = null, durchschnittDauerMin = null, letzterAbschluss = null,
             naechstesFaellig = 0L
         )
-        return recomputeFaelligkeit(t)
+        return t.copy(naechstesFaellig = t.erstelltAm)
     }
 }
