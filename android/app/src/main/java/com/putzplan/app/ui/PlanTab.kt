@@ -2,6 +2,7 @@ package com.putzplan.app.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -235,7 +236,11 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 FilledTonalButton(onClick = { zeigeDauerDialog = true }) {
                     Icon(Icons.Default.TaskAlt, contentDescription = null)
                     Spacer(Modifier.padding(2.dp))
@@ -252,7 +257,11 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
                     Text("später")
                 }
                 TextButton(onClick = { zeigeLoeschDialog = true }) {
-                    Icon(Icons.Outlined.Delete, contentDescription = "Löschen")
+                    Icon(
+                        Icons.Outlined.Delete,
+                        contentDescription = "Löschen",
+                        tint = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }
