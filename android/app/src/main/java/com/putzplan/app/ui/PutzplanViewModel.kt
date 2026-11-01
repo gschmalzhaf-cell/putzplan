@@ -109,6 +109,9 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
     private val _uebernommeneFotoTitel = MutableStateFlow<Set<String>>(emptySet())
     val uebernommeneFotoTitel: StateFlow<Set<String>> = _uebernommeneFotoTitel
 
+    private val _ausgewaehlteFotos = MutableStateFlow<List<ByteArray>>(emptyList())
+    val ausgewaehlteFotos: StateFlow<List<ByteArray>> = _ausgewaehlteFotos
+
     private val _stats = MutableStateFlow<Stats?>(null)
     val stats: StateFlow<Stats?> = _stats
 
@@ -170,12 +173,31 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun fotoHinzufuegen(bytes: ByteArray) {
+        val liste = _ausgewaehlteFotos.value
+        if (liste.size >= 8) return
+        _ausgewaehlteFotos.value = liste + bytes
+    }
+
+    fun fotoEntfernen(index: Int) {
+        _ausgewaehlteFotos.value = _ausgewaehlteFotos.value.toMutableList().also { it.removeAt(index) }
+    }
+
+    fun fotosLeeren() {
+        _ausgewaehlteFotos.value = emptyList()
+    }
+
     fun fotoAnalyseZuruecksetzen() {
         _fotoAnalyse.value = FotoAnalyseUi.Idle
         _uebernommeneFotoTitel.value = emptySet()
     }
 
     fun fotoAnalysieren(raum: String, imageBytes: ByteArray) {
+        fotoAnalysierenAlle(raum, listOf(imageBytes))
+    }
+
+    fun fotoAnalysierenAlle(raum: String, images: List<ByteArray>) {
+        if (images.isEmpty()) return
         _fotoAnalyse.value = FotoAnalyseUi.Laeuft
         viewModelScope.launch {
             if (_apiKey.value.isBlank()) {
@@ -184,8 +206,8 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
                 )
                 return@launch
             }
-            val dataUrl = zuDataUrl(imageBytes)
-            MistralVisionClient(_apiKey.value).analysiereFoto(raum, dataUrl).fold(
+            val dataUrls = images.map { zuDataUrl(it) }
+            MistralVisionClient(_apiKey.value).analysiereFotos(raum, dataUrls).fold(
                 onSuccess = { analyse ->
                     repo.fotoErkenntnisSpeichern(raum, "mistral-vision", "ok")
                     _stats.value = repo.stats()

@@ -1,9 +1,13 @@
 package com.putzplan.app.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddTask
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
@@ -47,12 +52,15 @@ fun FotoTab(vm: PutzplanViewModel) {
     val uebernommen by vm.uebernommeneFotoTitel.collectAsState()
     var raum by remember { mutableStateOf("") }
 
+    val fotos by vm.ausgewaehlteFotos.collectAsState()
+
     val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-        if (bytes != null && raum.isNotBlank()) vm.fotoAnalysieren(raum, bytes)
+        ActivityResultContracts.PickMultipleVisualMedia(maxItems = 8)
+    ) { uris ->
+        uris.forEach { uri ->
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            if (bytes != null) vm.fotoHinzufuegen(bytes)
+        }
     }
 
     Column(
@@ -94,12 +102,55 @@ fun FotoTab(vm: PutzplanViewModel) {
         Text("Zielbereich", style = MaterialTheme.typography.labelLarge)
         RaumDropdown(raeume, raum) { raum = it }
         Button(
-            onClick = { launcher.launch("image/*") },
+            onClick = { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
             modifier = Modifier.fillMaxWidth()
         ) {
             Icon(Icons.Default.PhotoCamera, contentDescription = null)
             Spacer(Modifier.padding(4.dp))
-            Text("Foto auswählen / aufnehmen")
+            Text("Fotos auswählen / aufnehmen (max. 8)")
+        }
+        if (fotos.isNotEmpty()) {
+            Text("${fotos.size} Foto(s) ausgew\u00e4hlt", style = MaterialTheme.typography.labelLarge)
+            androidx.compose.foundation.layout.FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                fotos.forEachIndexed { index, bytes ->
+                    val bmp = remember(bytes) {
+                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+                    }
+                    androidx.compose.foundation.layout.Box {
+                        if (bmp != null) {
+                            androidx.compose.foundation.Image(
+                                bitmap = bmp,
+                                contentDescription = "Foto ${index + 1}",
+                                modifier = Modifier.size(96.dp)
+                            )
+                        }
+                        androidx.compose.material3.IconButton(
+                            onClick = { vm.fotoEntfernen(index) },
+                            modifier = Modifier.align(Alignment.TopEnd)
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Foto ${index + 1} entfernen",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { if (raum.isNotBlank()) vm.fotoAnalysierenAlle(raum, fotos) },
+                    enabled = raum.isNotBlank() && analyse !is FotoAnalyseUi.Laeuft,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Alle ${fotos.size} Fotos analysieren")
+                }
+                TextButton(onClick = { vm.fotosLeeren() }) { Text("Leeren") }
+            }
         }
 
         when (val a = analyse) {
