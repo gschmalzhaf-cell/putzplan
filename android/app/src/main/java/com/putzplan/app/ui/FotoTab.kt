@@ -114,7 +114,9 @@ fun FotoTab(vm: PutzplanViewModel) {
         RaumDropdown(raeume, raum, onChange = { raum = it }, onRename = { alt, neu -> vm.raumUmbenennen(alt, neu) })
         Button(
             onClick = { launcher.launch("image/*") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .federPress(akzent = MaterialTheme.colorScheme.primary, ruheElevation = 4.dp)
         ) {
             Icon(Icons.Default.PhotoCamera, contentDescription = null)
             Spacer(Modifier.padding(4.dp))
@@ -156,7 +158,9 @@ fun FotoTab(vm: PutzplanViewModel) {
                 Button(
                     onClick = { if (raum.isNotBlank()) vm.fotoAnalysierenAlle(raum, fotos) },
                     enabled = raum.isNotBlank() && analyse !is FotoAnalyseUi.Laeuft,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .federPress(akzent = MaterialTheme.colorScheme.secondary, ruheElevation = 4.dp)
                 ) {
                     Text("Alle ${fotos.size} Fotos analysieren")
                 }
@@ -278,6 +282,12 @@ fun FotoTab(vm: PutzplanViewModel) {
                             }
                             val bereits = aufgabe.titel in uebernommen
                             FilledTonalButton(
+                                modifier = Modifier.federPress(
+                                    akzent = com.putzplan.app.ui.theme.raumFarbe(
+                                        a.analyse.raum.ifBlank { a.raum }.ifBlank { "Sonstiges" }
+                                    ),
+                                    ruheElevation = 3.dp
+                                ),
                                 onClick = {
                                     vm.fotoAufgabeUebernehmen(
                                         aufgabe,

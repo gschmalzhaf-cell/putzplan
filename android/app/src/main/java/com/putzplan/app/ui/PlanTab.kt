@@ -78,7 +78,12 @@ fun PutzplanApp(vm: PutzplanViewModel = viewModel()) {
                 ExtendedFloatingActionButton(
                     onClick = { zeigeNeuDialog = true },
                     icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text("Neue Aufgabe") }
+                    text = { Text("Neue Aufgabe") },
+                    modifier = Modifier.federPress(
+                        akzent = MaterialTheme.colorScheme.primary,
+                        form = MaterialTheme.shapes.extraLarge,
+                        ruheElevation = 8.dp
+                    )
                 )
             }
         },
@@ -130,14 +135,19 @@ fun PlanTab(vm: PutzplanViewModel) {
                 FilterChip(
                     selected = raum == "alle",
                     onClick = { raum = "alle"; vm.setRaumFilter("alle") },
-                    label = { Text("Alle") }
+                    label = { Text("Alle") },
+                    modifier = Modifier.federPress(ruheElevation = 3.dp)
                 )
             }
             items(raeume) { r ->
                 FilterChip(
                     selected = raum == r,
                     onClick = { raum = r; vm.setRaumFilter(r) },
-                    label = { Text(r) }
+                    label = { Text(r) },
+                    modifier = Modifier.federPress(
+                        akzent = com.putzplan.app.ui.theme.raumFarbe(r),
+                        ruheElevation = 3.dp
+                    )
                 )
             }
         }
@@ -201,7 +211,15 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
             }
         ),
         shape = MaterialTheme.shapes.large,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .federPress(
+                pressScale = 0.985f,
+                akzent = com.putzplan.app.ui.theme.raumFarbe(z.raum),
+                form = MaterialTheme.shapes.large,
+                ruheElevation = 3.dp,
+                gedruecktElevation = 1.dp
+            )
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             FlowRow(
@@ -232,22 +250,40 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                FilledTonalButton(onClick = { zeigeDauerDialog = true }) {
+                FilledTonalButton(
+                    onClick = { zeigeDauerDialog = true },
+                    modifier = Modifier.federPress(
+                        akzent = MaterialTheme.colorScheme.primary,
+                        ruheElevation = 4.dp
+                    )
+                ) {
                     Icon(Icons.Default.TaskAlt, contentDescription = null)
                     Spacer(Modifier.padding(2.dp))
                     Text("Erledigt")
                 }
-                TextButton(onClick = { zeigeAnleitung = true }) {
+                TextButton(
+                    onClick = { zeigeAnleitung = true },
+                    modifier = Modifier.federPress(ruheElevation = 2.dp)
+                ) {
                     Icon(Icons.Default.MenuBook, contentDescription = null)
                     Spacer(Modifier.padding(2.dp))
                     Text("Anleitung")
                 }
-                TextButton(onClick = { vm.ueberspringen(z.id) }) {
+                TextButton(
+                    onClick = { vm.ueberspringen(z.id) },
+                    modifier = Modifier.federPress(ruheElevation = 2.dp)
+                ) {
                     Icon(Icons.Default.Update, contentDescription = null)
                     Spacer(Modifier.padding(2.dp))
                     Text("später")
                 }
-                TextButton(onClick = { zeigeLoeschDialog = true }) {
+                TextButton(
+                    onClick = { zeigeLoeschDialog = true },
+                    modifier = Modifier.federPress(
+                        akzent = MaterialTheme.colorScheme.error,
+                        ruheElevation = 2.dp
+                    )
+                ) {
                     Icon(
                         Icons.Outlined.Delete,
                         contentDescription = "Löschen",
