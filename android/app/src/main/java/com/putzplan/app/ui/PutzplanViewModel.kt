@@ -179,10 +179,12 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun fotoHinzufuegen(bytes: ByteArray) {
+    fun fotoHinzufuegen(bytes: ByteArray): Boolean {
+        if (!dekodierbar(bytes)) return false
         val liste = _ausgewaehlteFotos.value
-        if (liste.size >= 8) return
+        if (liste.size >= 8) return false
         _ausgewaehlteFotos.value = liste + bytes
+        return true
     }
 
     fun fotoEntfernen(index: Int) {
@@ -212,7 +214,13 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
                 )
                 return@launch
             }
-            val dataUrls = images.map { zuDataUrl(it) }
+            val dataUrls = images.mapNotNull { runCatching { zuDataUrl(it) }.getOrNull() }
+            if (dataUrls.isEmpty()) {
+                _fotoAnalyse.value = FotoAnalyseUi.Fehler(
+                    "Keines der ausgew\u00e4hlten Bilder konnte gelesen werden."
+                )
+                return@launch
+            }
             val bisherJson = repo.letzteFotoErkenntnis(raum)?.analyseJson
             val bisher = if (bisherJson != null && bisherJson != "ok") {
                 runCatching {
@@ -242,11 +250,14 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun dekodierbar(bytes: ByteArray): Boolean =
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size) != null
+
     private fun zuDataUrl(bytes: ByteArray): String {
         val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-        val skaliert = Bitmap.createScaledBitmap(
-            bmp, 1024, (1024.0 * bmp.height / bmp.width).toInt(), true
-        )
+            ?: throw IllegalArgumentException("Bild konnte nicht dekodiert werden")
+        val hoehe = (1024.0 * bmp.height / bmp.width.coerceAtLeast(1)).toInt().coerceAtLeast(1)
+        val skaliert = Bitmap.createScaledBitmap(bmp, 1024, hoehe, true)
         val out = ByteArrayOutputStream()
         skaliert.compress(Bitmap.CompressFormat.JPEG, 85, out)
         val b64 = Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)

@@ -1,7 +1,6 @@
 package com.putzplan.app.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.asImageBitmap
@@ -56,11 +55,17 @@ fun FotoTab(vm: PutzplanViewModel) {
     val fotos by vm.ausgewaehlteFotos.collectAsState()
 
     val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(maxItems = 8)
+        ActivityResultContracts.GetMultipleContents()
     ) { uris ->
-        uris.forEach { uri ->
-            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-            if (bytes != null) vm.fotoHinzufuegen(bytes)
+        uris.take(8).forEach { uri ->
+            val bytes = runCatching {
+                context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            }.getOrNull()
+            if (bytes != null && !vm.fotoHinzufuegen(bytes)) {
+                android.widget.Toast.makeText(
+                    context, "Bild nicht lesbar oder Limit (8) erreicht", android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
         }
     }
 
@@ -103,7 +108,7 @@ fun FotoTab(vm: PutzplanViewModel) {
         Text("Zielbereich", style = MaterialTheme.typography.labelLarge)
         RaumDropdown(raeume, raum, onChange = { raum = it }, onRename = { alt, neu -> vm.raumUmbenennen(alt, neu) })
         Button(
-            onClick = { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+            onClick = { launcher.launch("image/*") },
             modifier = Modifier.fillMaxWidth()
         ) {
             Icon(Icons.Default.PhotoCamera, contentDescription = null)
