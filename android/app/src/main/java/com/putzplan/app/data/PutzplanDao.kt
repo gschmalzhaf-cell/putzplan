@@ -60,6 +60,9 @@ interface PutzplanDao {
     @Query("SELECT COUNT(*) FROM foto_erkenntnisse")
     suspend fun fotoErkenntnisCount(): Int
 
+    @Query("SELECT * FROM foto_erkenntnisse WHERE raum = :raum ORDER BY zeitpunkt DESC LIMIT 1")
+    suspend fun letzteFotoErkenntnis(raum: String): FotoErkenntnis?
+
     @Query("SELECT * FROM history ORDER BY zeitpunkt DESC LIMIT 10")
     suspend fun letzteAktionen(): List<HistoryEntry>
 }
