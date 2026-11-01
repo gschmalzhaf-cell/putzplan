@@ -42,14 +42,15 @@ import com.putzplan.app.logic.Konstanten
 fun FotoTab(vm: PutzplanViewModel) {
     val context = LocalContext.current
     val analyse by vm.fotoAnalyse.collectAsState()
-    var raum by remember { mutableStateOf("Ganze Wohnung") }
+    val raeume by vm.raeume.collectAsState()
+    var raum by remember { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
         uri ?: return@rememberLauncherForActivityResult
         val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-        if (bytes != null) vm.fotoAnalysieren(raum, bytes)
+        if (bytes != null && raum.isNotBlank()) vm.fotoAnalysieren(raum, bytes)
     }
 
     Column(
@@ -89,7 +90,7 @@ fun FotoTab(vm: PutzplanViewModel) {
             }
         }
         Text("Zielbereich", style = MaterialTheme.typography.labelLarge)
-        RaumDropdown(raum) { raum = it }
+        RaumDropdown(raeume, raum) { raum = it }
         Button(
             onClick = { launcher.launch("image/*") },
             modifier = Modifier.fillMaxWidth()
@@ -168,7 +169,12 @@ fun FotoTab(vm: PutzplanViewModel) {
                             if (aufgabe.anleitung.isNotBlank()) {
                                 Text(aufgabe.anleitung, style = MaterialTheme.typography.bodySmall)
                             }
-                            FilledTonalButton(onClick = { vm.fotoAufgabeUebernehmen(aufgabe, a.raum) }) {
+                            FilledTonalButton(onClick = {
+                                vm.fotoAufgabeUebernehmen(
+                                    aufgabe,
+                                    a.analyse.raum.ifBlank { a.raum }.ifBlank { "Sonstiges" }
+                                )
+                            }) {
                                 Icon(Icons.Default.AddTask, contentDescription = null)
                                 Spacer(Modifier.padding(2.dp))
                                 Text("In Plan übernehmen")

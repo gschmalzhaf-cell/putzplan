@@ -12,6 +12,9 @@ interface PutzplanDao {
     @Query("SELECT * FROM tasks ORDER BY titel")
     fun alleTasks(): Flow<List<Task>>
 
+    @Query("SELECT DISTINCT raum FROM tasks WHERE raum != '' ORDER BY raum")
+    fun distinkteRaeume(): Flow<List<String>>
+
     @Query("SELECT * FROM tasks WHERE id = :id")
     suspend fun taskById(id: String): Task?
 
@@ -26,6 +29,9 @@ interface PutzplanDao {
 
     @Query("DELETE FROM tasks WHERE id = :id")
     suspend fun deleteTask(id: String)
+
+    @Query("DELETE FROM history WHERE taskId = :id")
+    suspend fun deleteHistoryForTask(id: String)
 
     @Query("SELECT COUNT(*) FROM tasks")
     suspend fun taskCount(): Int

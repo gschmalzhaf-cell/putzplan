@@ -1,11 +1,6 @@
 package com.putzplan.app.logic
 
 object Konstanten {
-    val RAEUME = listOf(
-        "Wohnzimmer", "Küche", "Bad", "Schlafzimmer", "Flur", "Balkon",
-        "Abstellraum", "Ganze Wohnung"
-    )
-
     data class Intervall(val key: String, val label: String, val days: Int)
 
     val INTERVALLE: List<Intervall> = listOf(

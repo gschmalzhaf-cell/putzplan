@@ -36,5 +36,5 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: putzplan-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14

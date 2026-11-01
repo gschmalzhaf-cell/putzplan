@@ -97,6 +97,9 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
     private val _raumFilter = MutableStateFlow("alle")
     val raumFilter: StateFlow<String> = _raumFilter
 
+    val raeume: StateFlow<List<String>> = repo.raeume
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
     private val _apiKey = MutableStateFlow(prefs.getString("mistral_key", "") ?: "")
     val apiKey: StateFlow<String> = _apiKey
 
@@ -118,7 +121,6 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     init {
-        viewModelScope.launch { repo.initSeed() }
         viewModelScope.launch { _stats.value = repo.stats() }
     }
 
