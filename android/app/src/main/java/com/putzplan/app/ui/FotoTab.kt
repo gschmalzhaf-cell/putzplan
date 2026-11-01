@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddTask
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DriveFileRenameOutline
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
@@ -100,7 +101,7 @@ fun FotoTab(vm: PutzplanViewModel) {
             }
         }
         Text("Zielbereich", style = MaterialTheme.typography.labelLarge)
-        RaumDropdown(raeume, raum) { raum = it }
+        RaumDropdown(raeume, raum, onChange = { raum = it }, onRename = { alt, neu -> vm.raumUmbenennen(alt, neu) })
         Button(
             onClick = { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
             modifier = Modifier.fillMaxWidth()
@@ -177,10 +178,25 @@ fun FotoTab(vm: PutzplanViewModel) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val erkannt = a.analyse.raum.ifBlank { a.raum }
                         Text(
-                            "Erkannter Raum: ${a.analyse.raum.ifBlank { a.raum }}",
+                            "Erkannter Raum: $erkannt",
                             style = MaterialTheme.typography.titleMedium
                         )
+                        val zielRaum = raum.ifBlank { "Sonstiges" }
+                        if (erkannt.isNotBlank() && !erkannt.equals(zielRaum, ignoreCase = true)
+                            && raeume.any { it.equals(zielRaum, ignoreCase = true) }) {
+                            Text(
+                                "Mistral hat \u201e$erkannt\u201c erkannt statt \u201e$zielRaum\u201c.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            FilledTonalButton(onClick = { vm.raumUmbenennen(zielRaum, erkannt) }) {
+                                Icon(Icons.Default.DriveFileRenameOutline, contentDescription = null)
+                                Spacer(Modifier.padding(2.dp))
+                                Text("Raum \u201e$zielRaum\u201c in \u201e$erkannt\u201c umbenennen")
+                            }
+                        }
                         if (a.analyse.beobachtungen.isNotEmpty()) {
                             Text("Beobachtungen", style = MaterialTheme.typography.titleSmall)
                             a.analyse.beobachtungen.forEach {

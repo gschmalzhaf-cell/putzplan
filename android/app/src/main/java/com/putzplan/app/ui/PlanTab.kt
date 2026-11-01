@@ -350,7 +350,7 @@ fun NeuTaskDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 androidx.compose.material3.OutlinedTextField(titel, { titel = it }, label = { Text("Titel") })
-                RaumDropdown(raeume, raum) { raum = it }
+                RaumDropdown(raeume, raum, onChange = { raum = it }, onRename = { alt, neu -> vm.raumUmbenennen(alt, neu) })
                 IntervallDropdown(intervall) { intervall = it }
                 androidx.compose.material3.OutlinedTextField(
                     dauer, { dauer = it.filter { c -> c.isDigit() } },
@@ -378,9 +378,15 @@ fun NeuTaskDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RaumDropdown(raeume: List<String>, auswahl: String, onChange: (String) -> Unit) {
+fun RaumDropdown(
+    raeume: List<String>,
+    auswahl: String,
+    onChange: (String) -> Unit,
+    onRename: ((alt: String, neu: String) -> Unit)? = null
+) {
     var expanded by remember { mutableStateOf(false) }
     var zeigeNeuerRaum by remember { mutableStateOf(false) }
+    var renameAlt by remember { mutableStateOf<String?>(null) }
     var freitext by remember { mutableStateOf("") }
     androidx.compose.material3.OutlinedButton(onClick = { expanded = true }, Modifier.fillMaxWidth()) {
         Text("Raum: ${auswahl.ifBlank { "ausw\u00e4hlen" }}")
@@ -391,10 +397,45 @@ fun RaumDropdown(raeume: List<String>, auswahl: String, onChange: (String) -> Un
                 text = { Text(r) },
                 onClick = { onChange(r); expanded = false }
             )
+            if (onRename != null) {
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text("\u201e$r\u201c umbenennen \u2026") },
+                    onClick = { expanded = false; renameAlt = r; freitext = r }
+                )
+            }
         }
         androidx.compose.material3.DropdownMenuItem(
             text = { Text("Neuer Raum \u2026") },
             onClick = { expanded = false; freitext = ""; zeigeNeuerRaum = true }
+        )
+    }
+    if (renameAlt != null) {
+        val alt = renameAlt!!
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { renameAlt = null },
+            title = { Text("Raum umbenennen") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        "Alle Aufgaben und Verlaufseintr\u00e4ge von \u201e$alt\u201c werden verschoben.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    androidx.compose.material3.OutlinedTextField(
+                        freitext, { freitext = it }, label = { Text("Neuer Raumname") }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val name = freitext.trim()
+                    if (name.isNotBlank() && name != alt) onRename?.invoke(alt, name)
+                    renameAlt = null
+                }) { Text("Umbenennen") }
+            },
+            dismissButton = {
+                TextButton(onClick = { renameAlt = null }) { Text("Abbrechen") }
+            }
         )
     }
     if (zeigeNeuerRaum) {

@@ -30,6 +30,12 @@ interface PutzplanDao {
     @Query("DELETE FROM tasks WHERE id = :id")
     suspend fun deleteTask(id: String)
 
+    @Query("UPDATE tasks SET raum = :neu WHERE raum = :alt")
+    suspend fun renameRaumInTasks(alt: String, neu: String)
+
+    @Query("UPDATE history SET raum = :neu WHERE raum = :alt")
+    suspend fun renameRaumInHistory(alt: String, neu: String)
+
     @Query("DELETE FROM history WHERE taskId = :id")
     suspend fun deleteHistoryForTask(id: String)
 
