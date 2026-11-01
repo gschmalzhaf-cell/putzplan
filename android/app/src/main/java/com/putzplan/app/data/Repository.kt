@@ -41,8 +41,9 @@ class Repository(private val dao: PutzplanDao) {
             PlanZeile(t, ueberfaellig, tageBis)
         }.sortedWith(compareBy({ !it.ueberfaellig }, { it.tageBis }))
 
-        val minuten = zeilen.filter { it.ueberfaellig }.sumOf { it.task.dauerMin }
-        return Plan(zeilen, minuten, gefiltert.isNotEmpty() && zeilen.none { it.ueberfaellig || it.tageBis <= 0 })
+        val faelligZeilen = zeilen.filter { it.ueberfaellig || it.tageBis <= 1 }
+        val minuten = faelligZeilen.sumOf { it.task.dauerMin }
+        return Plan(faelligZeilen, minuten, gefiltert.isNotEmpty() && faelligZeilen.isEmpty())
     }
 
     suspend fun erledigt(taskId: String, dauerMin: Int?) = withContext(Dispatchers.IO) {

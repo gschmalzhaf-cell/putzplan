@@ -106,6 +106,9 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
     private val _fotoAnalyse = MutableStateFlow<FotoAnalyseUi>(FotoAnalyseUi.Idle)
     val fotoAnalyse: StateFlow<FotoAnalyseUi> = _fotoAnalyse
 
+    private val _uebernommeneFotoTitel = MutableStateFlow<Set<String>>(emptySet())
+    val uebernommeneFotoTitel: StateFlow<Set<String>> = _uebernommeneFotoTitel
+
     private val _stats = MutableStateFlow<Stats?>(null)
     val stats: StateFlow<Stats?> = _stats
 
@@ -160,12 +163,16 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
     fun fotoAufgabeUebernehmen(a: FotoAufgabe, raum: String) = viewModelScope.launch {
         val intervall = if (com.putzplan.app.logic.Konstanten.istGueltigesIntervall(a.intervall))
             a.intervall else "woechentlich"
-        repo.neuTask(a.titel, raum, intervall, a.dauerMin, a.hilfsmittel, a.anleitung, "foto")
-        _stats.value = repo.stats()
+        val ok = repo.neuTask(a.titel, raum, intervall, a.dauerMin, a.hilfsmittel, a.anleitung, "foto")
+        if (ok) {
+            _uebernommeneFotoTitel.value = _uebernommeneFotoTitel.value + a.titel
+            _stats.value = repo.stats()
+        }
     }
 
     fun fotoAnalyseZuruecksetzen() {
         _fotoAnalyse.value = FotoAnalyseUi.Idle
+        _uebernommeneFotoTitel.value = emptySet()
     }
 
     fun fotoAnalysieren(raum: String, imageBytes: ByteArray) {

@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddTask
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
@@ -43,6 +44,7 @@ fun FotoTab(vm: PutzplanViewModel) {
     val context = LocalContext.current
     val analyse by vm.fotoAnalyse.collectAsState()
     val raeume by vm.raeume.collectAsState()
+    val uebernommen by vm.uebernommeneFotoTitel.collectAsState()
     var raum by remember { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(
@@ -169,15 +171,22 @@ fun FotoTab(vm: PutzplanViewModel) {
                             if (aufgabe.anleitung.isNotBlank()) {
                                 Text(aufgabe.anleitung, style = MaterialTheme.typography.bodySmall)
                             }
-                            FilledTonalButton(onClick = {
-                                vm.fotoAufgabeUebernehmen(
-                                    aufgabe,
-                                    a.analyse.raum.ifBlank { a.raum }.ifBlank { "Sonstiges" }
+                            val bereits = aufgabe.titel in uebernommen
+                            FilledTonalButton(
+                                onClick = {
+                                    vm.fotoAufgabeUebernehmen(
+                                        aufgabe,
+                                        a.analyse.raum.ifBlank { a.raum }.ifBlank { "Sonstiges" }
+                                    )
+                                },
+                                enabled = !bereits
+                            ) {
+                                Icon(
+                                    if (bereits) Icons.Default.Check else Icons.Default.AddTask,
+                                    contentDescription = null
                                 )
-                            }) {
-                                Icon(Icons.Default.AddTask, contentDescription = null)
                                 Spacer(Modifier.padding(2.dp))
-                                Text("In Plan übernehmen")
+                                Text(if (bereits) "Im Plan übernommen" else "In Plan übernehmen")
                             }
                         }
                     }
