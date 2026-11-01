@@ -2,6 +2,7 @@ package com.putzplan.app.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -116,6 +117,7 @@ fun PutzplanApp(vm: PutzplanViewModel = viewModel()) {
 @Composable
 fun PlanTab(vm: PutzplanViewModel) {
     val plan by vm.plan.collectAsState()
+    val raeume by vm.raeume.collectAsState()
     var raum by remember { mutableStateOf("alle") }
 
     Column(Modifier.fillMaxSize()) {
@@ -130,7 +132,7 @@ fun PlanTab(vm: PutzplanViewModel) {
                     label = { Text("Alle") }
                 )
             }
-            items(Konstanten.RAEUME) { r ->
+            items(raeume) { r ->
                 FilterChip(
                     selected = raum == r,
                     onClick = { raum = r; vm.setRaumFilter(r) },
@@ -166,11 +168,21 @@ fun PlanTab(vm: PutzplanViewModel) {
         }
         Spacer(Modifier.height(8.dp))
         if (plan.zeilen.isEmpty() && !plan.lade) {
-            Text(
-                "Keine Aufgaben für diesen Raum.",
-                Modifier.padding(horizontal = 16.dp),
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Column(
+                Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    if (raum == "alle") "Noch keine Aufgaben angelegt."
+                    else "Keine Aufgaben für diesen Raum.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    "Lege über „Neue Aufgabe“ unten rechts die erste Aufgabe an – der Raum wird dabei automatisch erstellt.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
         LazyColumn(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(
@@ -189,6 +201,7 @@ fun PlanTab(vm: PutzplanViewModel) {
 fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
     var zeigeAnleitung by remember { mutableStateOf(false) }
     var zeigeDauerDialog by remember { mutableStateOf(false) }
+    var zeigeLoeschDialog by remember { mutableStateOf(false) }
 
     Card(
         colors = CardDefaults.cardColors(
@@ -223,7 +236,11 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 FilledTonalButton(onClick = { zeigeDauerDialog = true }) {
                     Icon(Icons.Default.TaskAlt, contentDescription = null)
                     Spacer(Modifier.padding(2.dp))
@@ -239,8 +256,12 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
                     Spacer(Modifier.padding(2.dp))
                     Text("später")
                 }
-                TextButton(onClick = { vm.loeschen(z.id) }) {
-                    Icon(Icons.Outlined.Delete, contentDescription = "Löschen")
+                TextButton(onClick = { zeigeLoeschDialog = true }) {
+                    Icon(
+                        Icons.Outlined.Delete,
+                        contentDescription = "Löschen",
+                        tint = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }
@@ -250,6 +271,22 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
     if (zeigeDauerDialog) DauerDialog(z.dauerMin) { dauer ->
         zeigeDauerDialog = false
         vm.erledigt(z.id, dauer)
+    }
+    if (zeigeLoeschDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { zeigeLoeschDialog = false },
+            title = { Text("Aufgabe löschen?") },
+            text = { Text("„${z.titel}“ wird unwiderruflich entfernt, inklusive Verlaufseinträgen.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    zeigeLoeschDialog = false
+                    vm.loeschen(z.id)
+                }) { Text("Löschen") }
+            },
+            dismissButton = {
+                TextButton(onClick = { zeigeLoeschDialog = false }) { Text("Abbrechen") }
+            }
+        )
     }
 }
 
@@ -299,8 +336,9 @@ fun DauerDialog(schaetzung: Int, onFertig: (Int?) -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NeuTaskDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
+    val raeume by vm.raeume.collectAsState()
     var titel by remember { mutableStateOf("") }
-    var raum by remember { mutableStateOf("Ganze Wohnung") }
+    var raum by remember { mutableStateOf("") }
     var intervall by remember { mutableStateOf("woechentlich") }
     var dauer by remember { mutableStateOf("15") }
     var hilfsmittel by remember { mutableStateOf("") }
@@ -312,7 +350,7 @@ fun NeuTaskDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 androidx.compose.material3.OutlinedTextField(titel, { titel = it }, label = { Text("Titel") })
-                RaumDropdown(raum) { raum = it }
+                RaumDropdown(raeume, raum) { raum = it }
                 IntervallDropdown(intervall) { intervall = it }
                 androidx.compose.material3.OutlinedTextField(
                     dauer, { dauer = it.filter { c -> c.isDigit() } },
@@ -324,7 +362,7 @@ fun NeuTaskDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
         },
         confirmButton = {
             TextButton(onClick = {
-                if (titel.isNotBlank()) {
+                if (titel.isNotBlank() && raum.isNotBlank()) {
                     vm.neuTask(
                         titel, raum, intervall, dauer.toIntOrNull() ?: 15,
                         hilfsmittel.split(',').map { it.trim() }.filter { it.isNotEmpty() },
@@ -340,15 +378,47 @@ fun NeuTaskDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RaumDropdown(auswahl: String, onChange: (String) -> Unit) {
+fun RaumDropdown(raeume: List<String>, auswahl: String, onChange: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
+    var zeigeNeuerRaum by remember { mutableStateOf(false) }
+    var freitext by remember { mutableStateOf("") }
     androidx.compose.material3.OutlinedButton(onClick = { expanded = true }, Modifier.fillMaxWidth()) {
-        Text("Raum: $auswahl")
+        Text("Raum: ${auswahl.ifBlank { "ausw\u00e4hlen" }}")
     }
     androidx.compose.material3.DropdownMenu(expanded, { expanded = false }) {
-        Konstanten.RAEUME.forEach { r ->
-            androidx.compose.material3.DropdownMenuItem(text = { Text(r) }, onClick = { onChange(r); expanded = false })
+        raeume.forEach { r ->
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text(r) },
+                onClick = { onChange(r); expanded = false }
+            )
         }
+        androidx.compose.material3.DropdownMenuItem(
+            text = { Text("Neuer Raum \u2026") },
+            onClick = { expanded = false; freitext = ""; zeigeNeuerRaum = true }
+        )
+    }
+    if (zeigeNeuerRaum) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { zeigeNeuerRaum = false },
+            title = { Text("Neuer Raum") },
+            text = {
+                androidx.compose.material3.OutlinedTextField(
+                    freitext, { freitext = it }, label = { Text("Raumname") }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val name = freitext.trim()
+                    if (name.isNotBlank()) {
+                        onChange(name)
+                        zeigeNeuerRaum = false
+                    }
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { zeigeNeuerRaum = false }) { Text("Abbrechen") }
+            }
+        )
     }
 }
 

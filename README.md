@@ -11,12 +11,12 @@ Native Android-App für den Putzplan – **ohne Server**, komplett offline-fähi
   - 3× übersprungen → automatisch selteneres Intervall
 - **Foto-Analyse mit Mistral Vision**: Foto aufnehmen → direkt aus der App an die Mistral-API → Aufgaben mit Priorität, Dauer, Hilfsmitteln → per Klick in den Plan übernehmen. API-Key wird in den App-Einstellungen hinterlegt (lokal gespeichert).
 - **Verlauf & Statistik**: erledigte Aufgaben pro Raum, letzte Aktionen
-- 15 Seed-Aufgaben beim ersten Start
+- App startet leer: Räume und Aufgaben werden selbst angelegt (manuell oder per Foto-Analyse)
 
 ## Voraussetzungen
 
-- Android Studio (Koala oder neuer empfohlen)
-- Android SDK 34, Java 17
+- Aktuelles Android Studio (neueste stabile Version empfohlen)
+- Android SDK 37, Java 17
 
 ## Bauen & Installieren
 
@@ -47,7 +47,7 @@ Die aktuelle APK findest du unter [Releases](https://github.com/gschmalzhaf-cell
 ```
 com.putzplan.app
 ├── data/        Room: Entities, DAO, Database, Repository (Plan-Berechnung)
-├── logic/       Konstanten (Räume, Intervalle), PlanLogik (Seed, Lernen, Fälligkeit)
+├── logic/       Konstanten (Intervalle), PlanLogik (Lernen, Fälligkeit)
 ├── net/         MistralVisionClient (Foto-Analyse, kotlinx.serialization)
 └── ui/          Compose UI: PlanTab, FotoTab, VerlaufTab, ViewModel, Theme
 ```
