@@ -214,16 +214,16 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
+            FlowRow(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Raumbadge(z.raum)
+                Raumbadge(z.raum, Modifier.weight(1f, fill = false))
                 if (z.ueberfaellig) DringlichkeitBadge("Überfällig")
             }
             Text(z.titel, style = MaterialTheme.typography.titleMedium)
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     listOf(
                         z.intervallLabel,
@@ -233,7 +233,8 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
                         "${z.erledigtZaehler}× erledigt"
                     ).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
                 )
             }
             FlowRow(
@@ -389,7 +390,11 @@ fun RaumDropdown(
     var renameAlt by remember { mutableStateOf<String?>(null) }
     var freitext by remember { mutableStateOf("") }
     androidx.compose.material3.OutlinedButton(onClick = { expanded = true }, Modifier.fillMaxWidth()) {
-        Text("Raum: ${auswahl.ifBlank { "ausw\u00e4hlen" }}")
+        Text(
+            "Raum: ${auswahl.ifBlank { "ausw\u00e4hlen" }}",
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+        )
     }
     androidx.compose.material3.DropdownMenu(expanded, { expanded = false }) {
         raeume.forEach { r ->
