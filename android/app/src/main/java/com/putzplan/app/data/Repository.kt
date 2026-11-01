@@ -106,6 +106,10 @@ class Repository(private val dao: PutzplanDao) {
             )
         }
 
+    suspend fun letzteFotoErkenntnis(raum: String): FotoErkenntnis? = withContext(Dispatchers.IO) {
+        dao.letzteFotoErkenntnis(raum)
+    }
+
     suspend fun stats(): Stats = withContext(Dispatchers.IO) {
         Stats(
             gesamtErledigt = dao.anzahlErledigt(),

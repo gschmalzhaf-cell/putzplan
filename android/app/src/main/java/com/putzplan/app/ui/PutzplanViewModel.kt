@@ -213,9 +213,25 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
                 return@launch
             }
             val dataUrls = images.map { zuDataUrl(it) }
-            MistralVisionClient(_apiKey.value).analysiereFotos(raum, dataUrls).fold(
+            val bisherJson = repo.letzteFotoErkenntnis(raum)?.analyseJson
+            val bisher = if (bisherJson != null && bisherJson != "ok") {
+                runCatching {
+                    val a = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+                        .decodeFromString<com.putzplan.app.net.FotoAnalyse>(bisherJson)
+                    buildString {
+                        appendLine("Raum: ${a.raum}")
+                        a.beobachtungen.forEach { appendLine("- $it") }
+                    }
+                }.getOrNull()
+            } else null
+            MistralVisionClient(_apiKey.value).analysiereFotos(raum, dataUrls, bisher).fold(
                 onSuccess = { analyse ->
-                    repo.fotoErkenntnisSpeichern(raum, "mistral-vision", "ok")
+                    repo.fotoErkenntnisSpeichern(
+                        raum, "mistral-vision",
+                        kotlinx.serialization.json.Json.encodeToString(
+                            com.putzplan.app.net.FotoAnalyse.serializer(), analyse
+                        )
+                    )
                     _stats.value = repo.stats()
                     _fotoAnalyse.value = FotoAnalyseUi.Ergebnis(raum, analyse)
                 },

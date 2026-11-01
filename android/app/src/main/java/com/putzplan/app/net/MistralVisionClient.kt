@@ -23,20 +23,35 @@ data class FotoAufgabe(
 )
 
 @Serializable
+data class RaumVeraenderung(
+    val typ: String = "",            // "hinzugefuegt" | "entfernt" | "veraendert"
+    val objekt: String = "",
+    val bemerkung: String = ""
+)
+
+@Serializable
 data class FotoAnalyse(
     val raum: String = "",
     val beobachtungen: List<String> = emptyList(),
-    val aufgaben: List<FotoAufgabe> = emptyList()
+    val aufgaben: List<FotoAufgabe> = emptyList(),
+    val veraenderungen: List<RaumVeraenderung> = emptyList()
 )
 
 object FotoPrompt {
-    fun fuerRaum(raum: String, anzahlBilder: Int = 1): String {
+    fun fuerRaum(raum: String, anzahlBilder: Int = 1, bisherigeObjekte: String? = null): String {
         val einleitung = if (anzahlBilder > 1)
             "Analysiere die folgenden $anzahlBilder Fotos desselben Raums zusammen (verschiedene Perspektiven/Bereiche). Fasse die Beobachtungen \u00fcber alle Bilder hinweg zusammen."
         else
             "Analysiere das Foto eines Raums (Kontext: Raum \"$raum\")."
+        val vergleich = if (bisherigeObjekte != null)
+            """Vergleich mit fr\u00fcherer Aufnahme desselben Raums. Bisher erkannte Objekte/Zust\u00e4nde:
+$ bisherigeObjekte
+Erkenne explizit VER\u00c4NDERUNGEN und f\u00fclle das Feld "veraenderungen" mit Eintr\u00e4gen vom Typ "hinzugefuegt" (neu hinzugekommen, z.B. neuer Schrank), "entfernt" (weggefallen, z.B. Schrank entfernt) oder "veraendert" (z.B. M\u00f6bel umgestellt, neuer Verschmutzungsgrad). Wenn nichts Neues erkennbar ist, lasse "veraenderungen" leer.
+"""
+        else ""
         return """
         Du bist ein Experte f\u00fcr Wohnungsreinigung. $einleitung
+        $vergleich
         Erkenne sichtbare Objekte, Oberfl\u00e4chen und Verschmutzungen (Staub, Flecken, Kalk, Fett, Unordnung).
         Leite daraus konkrete Reinigungsaufgaben ab. Antworte AUSSCHLIESSLICH als JSON-Objekt mit diesem Schema:
         {
@@ -52,6 +67,9 @@ object FotoPrompt {
               "intervall": "taeglich|woechentlich|zweiwoechentlich|monatlich|quartal|halbjaehrlich|jaehrlich",
               "prioritaet": 0.0
             }
+          ],
+          "veraenderungen": [
+            { "typ": "hinzugefuegt|entfernt|veraendert", "objekt": "z.B. Schrank", "bemerkung": "kurz erkl\u00e4rt" }
           ]
         }
         prioritaet: 0-1, wie dringend/auff\u00e4llig die Aufgabe auf den Fotos wirkt. dauerMin realistisch sch\u00e4tzen.
@@ -69,7 +87,11 @@ class MistralVisionClient(
     suspend fun analysiereFoto(raum: String, imageDataUrl: String): Result<FotoAnalyse> =
         analysiereFotos(raum, listOf(imageDataUrl))
 
-    suspend fun analysiereFotos(raum: String, imageDataUrls: List<String>): Result<FotoAnalyse> =
+    suspend fun analysiereFotos(
+        raum: String,
+        imageDataUrls: List<String>,
+        bisherigeObjekte: String? = null
+    ): Result<FotoAnalyse> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val requestJson = buildJsonObject {
@@ -80,7 +102,7 @@ class MistralVisionClient(
                             put("content", buildJsonArray {
                                 add(buildJsonObject {
                                     put("type", "text")
-                                    put("text", FotoPrompt.fuerRaum(raum, imageDataUrls.size))
+                                    put("text", FotoPrompt.fuerRaum(raum, imageDataUrls.size, bisherigeObjekte))
                                 })
                                 imageDataUrls.forEach { url ->
                                     add(buildJsonObject {

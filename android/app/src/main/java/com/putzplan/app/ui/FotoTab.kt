@@ -207,6 +207,34 @@ fun FotoTab(vm: PutzplanViewModel) {
                                 )
                             }
                         }
+                        if (a.analyse.veraenderungen.isNotEmpty()) {
+                            Text("Ver\u00e4nderungen zum letzten Scan", style = MaterialTheme.typography.titleSmall)
+                            a.analyse.veraenderungen.forEach { v ->
+                                val label = when (v.typ) {
+                                    "hinzugefuegt" -> "Neu hinzugekommen"
+                                    "entfernt" -> "Weggefallen"
+                                    "veraendert" -> "Ver\u00e4ndert"
+                                    else -> v.typ
+                                }
+                                val farbe = when (v.typ) {
+                                    "hinzugefuegt" -> MaterialTheme.colorScheme.primary
+                                    "entfernt" -> MaterialTheme.colorScheme.error
+                                    else -> MaterialTheme.colorScheme.tertiary
+                                }
+                                Text(
+                                    "\u2022 [$label] ${v.objekt}" +
+                                        (if (v.bemerkung.isNotBlank()) " \u2013 ${v.bemerkung}" else ""),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = farbe
+                                )
+                            }
+                        } else {
+                            Text(
+                                "Keine Ver\u00e4nderungen zum letzten Scan erkannt.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         if (a.analyse.aufgaben.isNotEmpty()) {
                             Text("Vorgeschlagene Aufgaben", style = MaterialTheme.typography.titleSmall)
                         }
