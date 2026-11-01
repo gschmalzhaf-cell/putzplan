@@ -14,9 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CornerBasedShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -25,7 +28,7 @@ import androidx.compose.ui.unit.dp
 fun Modifier.federPress(
     pressScale: Float = 0.97f,
     akzent: Color? = null,
-    form: CornerBasedShape = MaterialTheme.shapes.medium,
+    form: Shape = MaterialTheme.shapes.medium,
     ruheElevation: Dp = 6.dp,
     gedruecktElevation: Dp = 2.dp
 ): Modifier = composed {
@@ -65,7 +68,10 @@ fun Modifier.federPress(
                 zielY = (pos.y - cy).coerceIn(-maxOffset, maxOffset)
                 zielScale = pressScale
                 zielElevation = gedruecktElevation
-                tryAwaitRelease()
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false)
+                    waitForUpOrCancellation()
+                }
                 zielScale = 1f
                 zielX = 0f
                 zielY = 0f
