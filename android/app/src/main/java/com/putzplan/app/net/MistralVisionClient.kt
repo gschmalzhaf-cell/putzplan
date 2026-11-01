@@ -30,9 +30,14 @@ data class FotoAnalyse(
 )
 
 object FotoPrompt {
-    fun fuerRaum(raum: String): String = """
-        Du bist ein Experte für Wohnungsreinigung. Analysiere das Foto eines Raums (Kontext: Raum "$raum").
-        Erkenne sichtbare Objekte, Oberflächen und Verschmutzungen (Staub, Flecken, Kalk, Fett, Unordnung).
+    fun fuerRaum(raum: String, anzahlBilder: Int = 1): String {
+        val einleitung = if (anzahlBilder > 1)
+            "Analysiere die folgenden $anzahlBilder Fotos desselben Raums zusammen (verschiedene Perspektiven/Bereiche). Fasse die Beobachtungen \u00fcber alle Bilder hinweg zusammen."
+        else
+            "Analysiere das Foto eines Raums (Kontext: Raum \"$raum\")."
+        return """
+        Du bist ein Experte f\u00fcr Wohnungsreinigung. $einleitung
+        Erkenne sichtbare Objekte, Oberfl\u00e4chen und Verschmutzungen (Staub, Flecken, Kalk, Fett, Unordnung).
         Leite daraus konkrete Reinigungsaufgaben ab. Antworte AUSSCHLIESSLICH als JSON-Objekt mit diesem Schema:
         {
           "raum": "<erkannter Raum>",
@@ -40,17 +45,19 @@ object FotoPrompt {
           "aufgaben": [
             {
               "titel": "kurzer Aufgabentitel",
-              "bereich": "z.B. Boden, Fenster, Arbeitsfläche",
+              "bereich": "z.B. Boden, Fenster, Arbeitsfl\u00e4che",
               "dauerMin": 15,
               "hilfsmittel": ["..."],
-              "anleitung": "Schritt-für-Schritt",
+              "anleitung": "Schritt-f\u00fcr-Schritt",
               "intervall": "taeglich|woechentlich|zweiwoechentlich|monatlich|quartal|halbjaehrlich|jaehrlich",
               "prioritaet": 0.0
             }
           ]
         }
-        prioritaet: 0-1, wie dringend/auffällig die Aufgabe auf dem Foto wirkt. dauerMin realistisch schätzen.
+        prioritaet: 0-1, wie dringend/auff\u00e4llig die Aufgabe auf den Fotos wirkt. dauerMin realistisch sch\u00e4tzen.
+        Jede Aufgabe darf nur einmal vorkommen (nicht pro Bild wiederholen).
     """.trimIndent()
+    }
 }
 
 class MistralVisionClient(
@@ -60,6 +67,9 @@ class MistralVisionClient(
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     suspend fun analysiereFoto(raum: String, imageDataUrl: String): Result<FotoAnalyse> =
+        analysiereFotos(raum, listOf(imageDataUrl))
+
+    suspend fun analysiereFotos(raum: String, imageDataUrls: List<String>): Result<FotoAnalyse> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val requestJson = buildJsonObject {
@@ -70,14 +80,16 @@ class MistralVisionClient(
                             put("content", buildJsonArray {
                                 add(buildJsonObject {
                                     put("type", "text")
-                                    put("text", FotoPrompt.fuerRaum(raum))
+                                    put("text", FotoPrompt.fuerRaum(raum, imageDataUrls.size))
                                 })
-                                add(buildJsonObject {
-                                    put("type", "image_url")
-                                    put("image_url", buildJsonObject {
-                                        put("url", imageDataUrl)
+                                imageDataUrls.forEach { url ->
+                                    add(buildJsonObject {
+                                        put("type", "image_url")
+                                        put("image_url", buildJsonObject {
+                                            put("url", url)
+                                        })
                                     })
-                                })
+                                }
                             })
                         })
                     })
