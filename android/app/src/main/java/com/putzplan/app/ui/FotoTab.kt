@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.putzplan.app.logic.Konstanten
+import kotlinx.coroutines.launch
 
 @Composable
 fun FotoTab(vm: PutzplanViewModel) {
