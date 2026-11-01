@@ -183,7 +183,7 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
         if (!dekodierbar(bytes)) return false
         val liste = _ausgewaehlteFotos.value
         if (liste.size >= 8) return false
-        _ausgewaehlteFotos.value = liste + bytes
+        _ausgewaehlteFotos.value = liste + runCatching { downsample(bytes) }.getOrDefault(bytes)
         return true
     }
 
@@ -252,6 +252,21 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
 
     fun dekodierbar(bytes: ByteArray): Boolean =
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size) != null
+
+    private fun downsample(bytes: ByteArray): ByteArray {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        val sample = generateSequence(1) { it * 2 }
+            .takeWhile { it <= 8 }
+            .lastOrNull { bounds.outWidth / it >= 512 && bounds.outHeight / it >= 512 } ?: 1
+        val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+        val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts) ?: return bytes
+        val skaliert = Bitmap.createScaledBitmap(bmp, 1024,
+            (1024.0 * bmp.height / bmp.width.coerceAtLeast(1)).toInt().coerceAtLeast(1), true)
+        val out = ByteArrayOutputStream()
+        skaliert.compress(Bitmap.CompressFormat.JPEG, 80, out)
+        return out.toByteArray()
+    }
 
     private fun zuDataUrl(bytes: ByteArray): String {
         val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)

@@ -57,14 +57,18 @@ fun FotoTab(vm: PutzplanViewModel) {
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetMultipleContents()
     ) { uris ->
-        uris.take(8).forEach { uri ->
-            val bytes = runCatching {
-                context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-            }.getOrNull()
-            if (bytes != null && !vm.fotoHinzufuegen(bytes)) {
-                android.widget.Toast.makeText(
-                    context, "Bild nicht lesbar oder Limit (8) erreicht", android.widget.Toast.LENGTH_SHORT
-                ).show()
+        kotlinx.coroutines.MainScope().launch {
+            uris.take(8).forEach { uri ->
+                val bytes = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    runCatching {
+                        context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    }.getOrNull()
+                }
+                if (bytes != null && !vm.fotoHinzufuegen(bytes)) {
+                    android.widget.Toast.makeText(
+                        context, "Bild nicht lesbar oder Limit (8) erreicht", android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
     }
