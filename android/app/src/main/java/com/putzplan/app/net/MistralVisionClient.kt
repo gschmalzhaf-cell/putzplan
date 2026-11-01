@@ -55,7 +55,7 @@ object FotoPrompt {
 
 class MistralVisionClient(
     private val apiKey: String,
-    private val model: String = "pixtral-large-latest"
+    private val model: String = "mistral-medium-latest"
 ) {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
