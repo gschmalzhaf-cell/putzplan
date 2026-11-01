@@ -23,19 +23,15 @@ class Repository(private val dao: PutzplanDao) {
 
     val tasks: Flow<List<Task>> = dao.alleTasks()
 
-    val history: Flow<List<HistoryEntry>> = dao.history()
+    val raeume: Flow<List<String>> = dao.distinkteRaeume()
 
-    suspend fun initSeed() {
-        if (dao.taskCount() == 0) {
-            dao.insertTasks(PlanLogik.seedTasks())
-        }
-    }
+    val history: Flow<List<HistoryEntry>> = dao.history()
 
     fun bauePlan(tasks: List<Task>, raumFilter: String): Plan {
         val gefiltert = if (raumFilter == "alle" || raumFilter.isEmpty())
             tasks
         else
-            tasks.filter { it.raum == raumFilter || it.raum == "Ganze Wohnung" }
+            tasks.filter { it.raum == raumFilter }
 
         val jetzt = System.currentTimeMillis()
         val zeilen = gefiltert.map { t ->
@@ -46,7 +42,7 @@ class Repository(private val dao: PutzplanDao) {
         }.sortedWith(compareBy({ !it.ueberfaellig }, { it.tageBis }))
 
         val minuten = zeilen.filter { it.ueberfaellig }.sumOf { it.task.dauerMin }
-        return Plan(zeilen, minuten, zeilen.none { it.ueberfaellig || it.tageBis <= 0 })
+        return Plan(zeilen, minuten, gefiltert.isNotEmpty() && zeilen.none { it.ueberfaellig || it.tageBis <= 0 })
     }
 
     suspend fun erledigt(taskId: String, dauerMin: Int?) = withContext(Dispatchers.IO) {
@@ -77,6 +73,7 @@ class Repository(private val dao: PutzplanDao) {
 
     suspend fun loeschen(taskId: String) = withContext(Dispatchers.IO) {
         dao.deleteTask(taskId)
+        dao.deleteHistoryForTask(taskId)
     }
 
     suspend fun neuTask(
@@ -84,8 +81,9 @@ class Repository(private val dao: PutzplanDao) {
         hilfsmittel: List<String>, anleitung: String, erstelltAus: String
     ): Boolean = withContext(Dispatchers.IO) {
         if (titel.isBlank() || !Konstanten.istGueltigesIntervall(intervall)) return@withContext false
+        val raumFix = raum.trim().ifBlank { "Sonstiges" }
         dao.insertTask(
-            PlanLogik.neuerTask(titel, raum, intervall, dauerMin, hilfsmittel, anleitung, erstelltAus)
+            PlanLogik.neuerTask(titel, raumFix, intervall, dauerMin, hilfsmittel, anleitung, erstelltAus)
         )
         true
     }
