@@ -30,10 +30,9 @@ object PlanLogik {
             else dauerMin
             t = t.copy(
                 letzteDauerMin = dauerMin,
-                durchschnittDauerMin = neuerSchnitt
+                durchschnittDauerMin = neuerSchnitt,
+                dauerMin = neuerSchnitt.coerceAtLeast(1)
             )
-            if (dauerMin > t.dauerMin * 1.5) t = t.copy(dauerMin = ((t.dauerMin * 1.1).toInt()))
-            if (dauerMin < t.dauerMin * 0.6 && t.dauerMin > 5) t = t.copy(dauerMin = maxOf(5, (t.dauerMin * 0.9).toInt()))
         }
         t = normalizeIntervall(t)
         return recomputeFaelligkeit(t)

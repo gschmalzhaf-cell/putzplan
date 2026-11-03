@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Card
@@ -201,6 +203,21 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
     var zeigeAnleitung by remember { mutableStateOf(false) }
     var zeigeDauerDialog by remember { mutableStateOf(false) }
     var zeigeLoeschDialog by remember { mutableStateOf(false) }
+    val stoppuhr by vm.stoppuhr.collectAsState()
+    val laeuft = stoppuhr?.first == z.id
+    var sekunden by remember { mutableStateOf(0L) }
+    androidx.compose.runtime.LaunchedEffect(laeuft) {
+        if (laeuft) {
+            val start = stoppuhr?.second ?: System.currentTimeMillis()
+            while (true) {
+                kotlinx.coroutines.delay(1000)
+                sekunden = (System.currentTimeMillis() - start) / 1000
+            }
+        } else {
+            sekunden = 0L
+        }
+    }
+    val zeitText = "%02d:%02d".format(sekunden / 60, sekunden % 60)
 
     Card(
         colors = CardDefaults.cardColors(
@@ -235,7 +252,8 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
                 Text(
                     listOf(
                         z.intervallLabel,
-                        "${z.dauerMin} Min.",
+                        "${z.dauerMin} Min." +
+                            (z.durchschnittDauerMin?.let { " (Ø $it Min. gemessen)" } ?: ""),
                         if (z.ueberfaellig) "überfällig seit ${-z.tageBis} T."
                         else "fällig in ${z.tageBis} T.",
                         "${z.erledigtZaehler}× erledigt"
@@ -260,6 +278,28 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
                     Icon(Icons.Default.TaskAlt, contentDescription = null)
                     Spacer(Modifier.padding(2.dp))
                     Text("Erledigt")
+                }
+                if (laeuft) {
+                    FilledTonalButton(
+                        onClick = { vm.stoppuhrStop(z.id) },
+                        modifier = Modifier.federPress(
+                            akzent = MaterialTheme.colorScheme.tertiary,
+                            ruheElevation = 4.dp
+                        )
+                    ) {
+                        Icon(Icons.Default.Stop, contentDescription = "Stoppuhr stoppen")
+                        Spacer(Modifier.padding(2.dp))
+                        Text(zeitText)
+                    }
+                } else {
+                    TextButton(
+                        onClick = { vm.stoppuhrStart(z.id) },
+                        modifier = Modifier.federPress(ruheElevation = 2.dp)
+                    ) {
+                        Icon(Icons.Default.Timer, contentDescription = "Stoppuhr starten")
+                        Spacer(Modifier.padding(2.dp))
+                        Text("Stoppuhr")
+                    }
                 }
                 TextButton(
                     onClick = { zeigeAnleitung = true },
