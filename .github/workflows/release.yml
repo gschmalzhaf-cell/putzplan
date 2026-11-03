@@ -45,12 +45,23 @@ jobs:
           cp app/build/outputs/apk/release/app-release.apk \
              "putzplan-v${{ steps.version.outputs.version }}.apk"
 
-      - name: GitHub-Release erstellen
+      - name: Changelog generieren (Regel: immer in den Release-Tag)
+        run: |
+          chmod +x ../scripts/changelog.sh
+          ../scripts/changelog.sh "${GITHUB_REF_NAME}" > ../changelog.md
+          cat ../changelog.md
+
+      - name: GitHub-Release erstellen/aktualisieren (mit Changelog-Notes)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "Putzplan ${{ steps.version.outputs.version }}" \
-            --generate-notes \
-            "putzplan-v${{ steps.version.outputs.version }}.apk"
+          if gh release view "${GITHUB_REF_NAME}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "${GITHUB_REF_NAME}" --repo "$GITHUB_REPOSITORY" \
+              --title "Putzplan ${{ steps.version.outputs.version }}" \
+              --notes-file ../changelog.md
+          else
+            gh release create "${GITHUB_REF_NAME}" --repo "$GITHUB_REPOSITORY" \
+              --title "Putzplan ${{ steps.version.outputs.version }}" \
+              --notes-file ../changelog.md \
+              "putzplan-v${{ steps.version.outputs.version }}.apk"
+          fi

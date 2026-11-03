@@ -51,3 +51,19 @@ com.putzplan.app
 ├── net/         MistralVisionClient (Foto-Analyse, kotlinx.serialization)
 └── ui/          Compose UI: PlanTab, FotoTab, VerlaufTab, ViewModel, Theme
 ```
+
+## Release & Changelog
+
+**Regel:** Jeder Release-Tag (`vX.Y.Z`) bekommt automatisch ein nutzerlesbares
+Changelog in die GitHub-Release-Notes. Der Release-Workflow
+(`.github/workflows/release.yml`) generiert es bei jedem Tag-Push mit
+`scripts/changelog.sh` (Commits seit dem vorherigen Tag, gruppiert nach
+`feat` / `fix` / `chore` / Sonstiges) und schreibt es per `gh release create/edit
+--notes-file` in den Release.
+
+Manuell nachpflegen (z.B. für ältere Tags):
+
+```bash
+scripts/changelog.sh v1.5.1 > /tmp/changelog.md
+gh release edit v1.5.1 --repo gschmalzhaf-cell/putzplan --notes-file /tmp/changelog.md
+```
