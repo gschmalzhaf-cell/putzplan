@@ -146,6 +146,25 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
         _apiKey.value = k
     }
 
+    private val _stoppuhr = MutableStateFlow<Pair<String, Long>?>(null)
+    val stoppuhr: StateFlow<Pair<String, Long>?> = _stoppuhr
+
+    fun stoppuhrStart(taskId: String) {
+        _stoppuhr.value = taskId to System.currentTimeMillis()
+    }
+
+    fun stoppuhrStop(taskId: String) {
+        val start = _stoppuhr.value?.takeIf { it.first == taskId }?.second ?: return
+        _stoppuhr.value = null
+        val sek = (System.currentTimeMillis() - start) / 1000
+        val minuten = maxOf(1, (sek / 60).toInt())
+        erledigt(taskId, minuten)
+    }
+
+    fun stoppuhrAbbrechen() {
+        _stoppuhr.value = null
+    }
+
     fun erledigt(taskId: String, dauerMin: Int?) = viewModelScope.launch {
         repo.erledigt(taskId, dauerMin)
         _stats.value = repo.stats()
