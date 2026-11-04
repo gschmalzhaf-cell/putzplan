@@ -17,7 +17,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.Stop
@@ -204,17 +206,19 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
     var zeigeDauerDialog by remember { mutableStateOf(false) }
     var zeigeLoeschDialog by remember { mutableStateOf(false) }
     val stoppuhr by vm.stoppuhr.collectAsState()
-    val laeuft = stoppuhr?.first == z.id
+    val zustand = stoppuhr?.takeIf { it.taskId == z.id }
     var sekunden by remember { mutableStateOf(0L) }
-    androidx.compose.runtime.LaunchedEffect(laeuft) {
-        if (laeuft) {
-            val start = stoppuhr?.second ?: System.currentTimeMillis()
+    androidx.compose.runtime.LaunchedEffect(zustand?.taskId, zustand?.laeuft) {
+        val s = zustand
+        if (s == null) {
+            sekunden = 0L
+        } else if (s.laeuft) {
             while (true) {
                 kotlinx.coroutines.delay(1000)
-                sekunden = (System.currentTimeMillis() - start) / 1000
+                sekunden = s.vergangeneMs() / 1000
             }
         } else {
-            sekunden = 0L
+            sekunden = s.vergangeneMs() / 1000
         }
     }
     val zeitText = "%02d:%02d".format(sekunden / 60, sekunden % 60)
@@ -279,7 +283,7 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
                     Spacer(Modifier.padding(2.dp))
                     Text("Erledigt")
                 }
-                if (laeuft) {
+                if (zustand != null) {
                     FilledTonalButton(
                         onClick = { vm.stoppuhrStop(z.id) },
                         modifier = Modifier.federPress(
@@ -290,6 +294,25 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
                         Icon(Icons.Default.Stop, contentDescription = "Stoppuhr stoppen")
                         Spacer(Modifier.padding(2.dp))
                         Text(zeitText)
+                    }
+                    if (zustand.laeuft) {
+                        TextButton(
+                            onClick = { vm.stoppuhrPause(z.id) },
+                            modifier = Modifier.federPress(ruheElevation = 2.dp)
+                        ) {
+                            Icon(Icons.Default.Pause, contentDescription = "Stoppuhr pausieren")
+                            Spacer(Modifier.padding(2.dp))
+                            Text("Pause")
+                        }
+                    } else {
+                        TextButton(
+                            onClick = { vm.stoppuhrFortsetzen(z.id) },
+                            modifier = Modifier.federPress(ruheElevation = 2.dp)
+                        ) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Stoppuhr fortsetzen")
+                            Spacer(Modifier.padding(2.dp))
+                            Text("Fortsetzen")
+                        }
                     }
                 } else {
                     TextButton(
