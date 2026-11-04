@@ -45,7 +45,7 @@ jobs:
           cp app/build/outputs/apk/release/app-release.apk \
              "putzplan-v${{ steps.version.outputs.version }}.apk"
 
-      - name: Changelog generieren (Regel: immer in den Release-Tag)
+      - name: "Changelog generieren (Regel: immer in den Release-Tag)"
         run: |
           chmod +x ../scripts/changelog.sh
           ../scripts/changelog.sh "${GITHUB_REF_NAME}" > ../changelog.md
