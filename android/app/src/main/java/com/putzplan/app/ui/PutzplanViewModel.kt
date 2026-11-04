@@ -146,17 +146,32 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
         _apiKey.value = k
     }
 
-    private val _stoppuhr = MutableStateFlow<Pair<String, Long>?>(null)
-    val stoppuhr: StateFlow<Pair<String, Long>?> = _stoppuhr
+    private val _stoppuhr = MutableStateFlow<StoppuhrZustand?>(null)
+    val stoppuhr: StateFlow<StoppuhrZustand?> = _stoppuhr
 
     fun stoppuhrStart(taskId: String) {
-        _stoppuhr.value = taskId to System.currentTimeMillis()
+        _stoppuhr.value = StoppuhrZustand(taskId = taskId, startzeit = System.currentTimeMillis())
+    }
+
+    fun stoppuhrPause(taskId: String) {
+        val s = _stoppuhr.value ?: return
+        if (s.taskId != taskId || !s.laeuft) return
+        _stoppuhr.value = s.copy(
+            laeuft = false,
+            akkumulierteMs = s.vergangeneMs()
+        )
+    }
+
+    fun stoppuhrFortsetzen(taskId: String) {
+        val s = _stoppuhr.value ?: return
+        if (s.taskId != taskId || s.laeuft) return
+        _stoppuhr.value = s.copy(laeuft = true, startzeit = System.currentTimeMillis())
     }
 
     fun stoppuhrStop(taskId: String) {
-        val start = _stoppuhr.value?.takeIf { it.first == taskId }?.second ?: return
+        val s = _stoppuhr.value?.takeIf { it.taskId == taskId } ?: return
         _stoppuhr.value = null
-        val sek = (System.currentTimeMillis() - start) / 1000
+        val sek = s.vergangeneMs() / 1000
         val minuten = maxOf(1, (sek / 60).toInt())
         erledigt(taskId, minuten)
     }
@@ -297,4 +312,14 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
         val b64 = Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
         return "data:image/jpeg;base64,$b64"
     }
+}
+
+data class StoppuhrZustand(
+    val taskId: String,
+    val laeuft: Boolean = true,
+    val startzeit: Long = 0L,
+    val akkumulierteMs: Long = 0L
+) {
+    fun vergangeneMs(now: Long = System.currentTimeMillis()): Long =
+        akkumulierteMs + if (laeuft) (now - startzeit).coerceAtLeast(0L) else 0L
 }
