@@ -1,6 +1,8 @@
 package com.putzplan.app.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -9,11 +11,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MenuBook
@@ -26,9 +31,11 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
@@ -37,6 +44,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -465,7 +473,6 @@ fun NeuTaskDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
         dismissButton = { TextButton(onClick = onDismiss) { Text("Abbrechen") } }
     )
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RaumDropdown(
@@ -474,90 +481,177 @@ fun RaumDropdown(
     onChange: (String) -> Unit,
     onRename: ((alt: String, neu: String) -> Unit)? = null
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    var zeigeNeuerRaum by remember { mutableStateOf(false) }
+    var zeigeDialog by remember { mutableStateOf(false) }
     var renameAlt by remember { mutableStateOf<String?>(null) }
-    var freitext by remember { mutableStateOf("") }
-    androidx.compose.material3.OutlinedButton(onClick = { expanded = true }, Modifier.fillMaxWidth()) {
+    var renameText by remember { mutableStateOf("") }
+    var neuerRaum by remember { mutableStateOf("") }
+
+    OutlinedButton(
+        onClick = { zeigeDialog = true },
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier
+            .fillMaxWidth()
+            .federPress(
+                akzent = if (auswahl.isNotBlank()) com.putzplan.app.ui.theme.raumFarbe(auswahl) else null,
+                form = MaterialTheme.shapes.large,
+                ruheElevation = 3.dp
+            )
+    ) {
+        Box(
+            Modifier
+                .size(12.dp)
+                .background(
+                    if (auswahl.isNotBlank()) com.putzplan.app.ui.theme.raumFarbe(auswahl)
+                    else MaterialTheme.colorScheme.outline,
+                    CircleShape
+                )
+        )
+        Spacer(Modifier.padding(6.dp))
         Text(
             "Raum: ${auswahl.ifBlank { "ausw\u00e4hlen" }}",
             maxLines = 1,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
     }
-    androidx.compose.material3.DropdownMenu(expanded, { expanded = false }) {
-        raeume.forEach { r ->
-            androidx.compose.material3.DropdownMenuItem(
-                text = { Text(r) },
-                onClick = { onChange(r); expanded = false }
-            )
-            if (onRename != null) {
-                androidx.compose.material3.DropdownMenuItem(
-                    text = { Text("\u201e$r\u201c umbenennen \u2026") },
-                    onClick = { expanded = false; renameAlt = r; freitext = r }
-                )
-            }
-        }
-        androidx.compose.material3.DropdownMenuItem(
-            text = { Text("Neuer Raum \u2026") },
-            onClick = { expanded = false; freitext = ""; zeigeNeuerRaum = true }
-        )
-    }
-    if (renameAlt != null) {
-        val alt = renameAlt!!
+
+    val alt = renameAlt
+    if (zeigeDialog) {
         androidx.compose.material3.AlertDialog(
-            onDismissRequest = { renameAlt = null },
-            title = { Text("Raum umbenennen") },
+            onDismissRequest = { zeigeDialog = false; renameAlt = null },
+            title = { Text(if (alt == null) "Raum w\u00e4hlen" else "Raum umbenennen") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        "Alle Aufgaben und Verlaufseintr\u00e4ge von \u201e$alt\u201c werden verschoben.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    androidx.compose.material3.OutlinedTextField(
-                        freitext, { freitext = it }, label = { Text("Neuer Raumname") }
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (alt == null) {
+                        if (raeume.isEmpty()) {
+                            Text(
+                                "Noch keine R\u00e4ume \u2013 lege unten den ersten an.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        raeume.forEach { r ->
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val farbe = com.putzplan.app.ui.theme.raumFarbe(r)
+                                Surface(
+                                    onClick = { onChange(r); zeigeDialog = false },
+                                    color = farbe,
+                                    shape = MaterialTheme.shapes.large,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .federPress(
+                                            pressScale = 0.98f,
+                                            akzent = farbe,
+                                            form = MaterialTheme.shapes.large,
+                                            ruheElevation = 3.dp
+                                        )
+                                ) {
+                                    Row(
+                                        Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            r,
+                                            Modifier.weight(1f),
+                                            style = MaterialTheme.typography.titleSmall,
+                                            color = com.putzplan.app.ui.theme.AufPastell,
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                        )
+                                        if (r == auswahl) {
+                                            Icon(
+                                                Icons.Default.Check,
+                                                contentDescription = "ausgew\u00e4hlt",
+                                                tint = com.putzplan.app.ui.theme.AufPastell
+                                            )
+                                        }
+                                    }
+                                }
+                                if (onRename != null) {
+                                    IconButton(onClick = { renameAlt = r; renameText = r }) {
+                                        Icon(
+                                            Icons.Outlined.Edit,
+                                            contentDescription = "\u201e$r\u201c umbenennen",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        HorizontalDivider()
+                        Text(
+                            "Neuer Raum",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            androidx.compose.material3.OutlinedTextField(
+                                neuerRaum,
+                                { neuerRaum = it },
+                                Modifier.weight(1f),
+                                label = { Text("Raumname") },
+                                singleLine = true
+                            )
+                            FilledTonalButton(
+                                enabled = neuerRaum.isNotBlank(),
+                                onClick = {
+                                    onChange(neuerRaum.trim())
+                                    neuerRaum = ""
+                                    zeigeDialog = false
+                                },
+                                modifier = Modifier.federPress(
+                                    akzent = MaterialTheme.colorScheme.primary,
+                                    ruheElevation = 3.dp
+                                )
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null)
+                                Spacer(Modifier.padding(2.dp))
+                                Text("Anlegen")
+                            }
+                        }
+                    } else {
+                        androidx.compose.material3.OutlinedTextField(
+                            renameText,
+                            { renameText = it },
+                            Modifier.fillMaxWidth(),
+                            label = { Text("Neuer Raumname") },
+                            singleLine = true
+                        )
+                        Text(
+                            "Alle Aufgaben und Verlaufseintr\u00e4ge von \u201e$alt\u201c werden verschoben.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    val name = freitext.trim()
-                    if (name.isNotBlank() && name != alt) onRename?.invoke(alt, name)
-                    renameAlt = null
-                }) { Text("Umbenennen") }
+                if (alt == null) {
+                    TextButton(onClick = { zeigeDialog = false }) { Text("Abbrechen") }
+                } else {
+                    TextButton(
+                        onClick = {
+                            val name = renameText.trim()
+                            if (name.isNotBlank() && name != alt) onRename?.invoke(alt, name)
+                            renameAlt = null
+                            zeigeDialog = false
+                        }
+                    ) { Text("Umbenennen") }
+                }
             },
             dismissButton = {
-                TextButton(onClick = { renameAlt = null }) { Text("Abbrechen") }
-            }
-        )
-    }
-    if (zeigeNeuerRaum) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { zeigeNeuerRaum = false },
-            title = { Text("Neuer Raum") },
-            text = {
-                androidx.compose.material3.OutlinedTextField(
-                    freitext, { freitext = it }, label = { Text("Raumname") }
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    val name = freitext.trim()
-                    if (name.isNotBlank()) {
-                        onChange(name)
-                        zeigeNeuerRaum = false
-                    }
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { zeigeNeuerRaum = false }) { Text("Abbrechen") }
+                if (alt != null) {
+                    TextButton(onClick = { renameAlt = null }) { Text("Zur\u00fcck") }
+                }
             }
         )
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IntervallDropdown(auswahl: String, onChange: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
