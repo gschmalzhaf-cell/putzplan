@@ -21,13 +21,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Gradle 9.7.1 einrichten
+      - name: Gradle 9.8.2 einrichten
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: '9.8.2'
+          gradle-version: "9.8.2"
 
       - name: Gradle-Wrapper generieren
-        run: gradle wrapper --gradle-version 9.8.2
+        run: gradle wrapper --gradle-version 9.8.2 --no-validate-url
 
       - name: Debug-APK bauen
         run: ./gradlew assembleDebug --stacktrace

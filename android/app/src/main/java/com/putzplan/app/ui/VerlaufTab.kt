@@ -29,6 +29,9 @@ import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.FlowRow
 
 @Composable
 fun VerlaufTab(vm: PutzplanViewModel) {
@@ -56,7 +59,7 @@ fun VerlaufTab(vm: PutzplanViewModel) {
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     if (s.proRaum.isNotEmpty()) {
-                        androidx.compose.foundation.layout.FlowRow(
+                        FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
@@ -77,7 +80,7 @@ fun VerlaufTab(vm: PutzplanViewModel) {
                     if (badges.isNotEmpty()) {
                         Text("Erfolge", style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onPrimaryContainer)
-                        androidx.compose.foundation.layout.FlowRow(
+                        FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
@@ -135,7 +138,7 @@ fun VerlaufTab(vm: PutzplanViewModel) {
         )
         Spacer(Modifier.height(8.dp))
         LazyColumn(
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             items(history, key = { "${it.titel}-${it.zeitpunkt}" }) { h ->
@@ -157,7 +160,7 @@ fun VerlaufTab(vm: PutzplanViewModel) {
                                 h.titel,
                                 style = MaterialTheme.typography.bodyLarge,
                                 maxLines = 2,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis
                             )
                             val zeit = SimpleDateFormat("dd.MM.yy HH:mm", Locale.GERMAN)
                                 .format(Date(h.zeitpunkt))

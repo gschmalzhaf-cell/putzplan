@@ -94,29 +94,6 @@ fun DringlichkeitBadge(text: String) {
 }
 
 @Composable
-fun StatusBanner(titel: String, text: String) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        Text(
-            titel,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
-}
-
-@Composable
 fun StatKachel(wert: String, label: String) {
     Column(
         Modifier.padding(8.dp),

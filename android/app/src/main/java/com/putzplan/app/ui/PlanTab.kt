@@ -62,6 +62,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.putzplan.app.logic.Konstanten
+import kotlinx.coroutines.delay
+import com.putzplan.app.ui.theme.raumFarbe
+import com.putzplan.app.ui.theme.AufPastell
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.PaddingValues
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -140,7 +150,7 @@ fun PlanTab(vm: PutzplanViewModel) {
 
     Column(Modifier.fillMaxSize()) {
         LazyRow(
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
@@ -157,7 +167,7 @@ fun PlanTab(vm: PutzplanViewModel) {
                     onClick = { raum = r; vm.setRaumFilter(r) },
                     label = { Text(r) },
                     modifier = Modifier.federPress(
-                        akzent = com.putzplan.app.ui.theme.raumFarbe(r),
+                        akzent = raumFarbe(r),
                         ruheElevation = 3.dp
                     )
                 )
@@ -196,7 +206,7 @@ fun PlanTab(vm: PutzplanViewModel) {
             }
         }
         LazyColumn(
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            contentPadding = PaddingValues(
                 horizontal = 16.dp, vertical = 4.dp
             ),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -216,13 +226,13 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
     val stoppuhr by vm.stoppuhr.collectAsState()
     val zustand = stoppuhr?.takeIf { it.taskId == z.id }
     var sekunden by remember { mutableStateOf(0L) }
-    androidx.compose.runtime.LaunchedEffect(zustand?.taskId, zustand?.laeuft) {
+    LaunchedEffect(zustand?.taskId, zustand?.laeuft) {
         val s = zustand
         if (s == null) {
             sekunden = 0L
         } else if (s.laeuft) {
             while (true) {
-                kotlinx.coroutines.delay(1000)
+                delay(1000)
                 sekunden = s.vergangeneMs() / 1000
             }
         } else {
@@ -235,7 +245,7 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
         colors = CardDefaults.cardColors(
             containerColor = when {
                 z.ueberfaellig -> MaterialTheme.colorScheme.surfaceContainerHigh
-                else -> com.putzplan.app.ui.theme.raumFarbe(z.raum).copy(alpha = 0.35f)
+                else -> raumFarbe(z.raum).copy(alpha = 0.35f)
                     .compositeOver(MaterialTheme.colorScheme.surface)
             }
         ),
@@ -244,7 +254,7 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
             .fillMaxWidth()
             .federPress(
                 pressScale = 0.985f,
-                akzent = com.putzplan.app.ui.theme.raumFarbe(z.raum),
+                akzent = raumFarbe(z.raum),
                 form = MaterialTheme.shapes.large,
                 ruheElevation = 3.dp,
                 gedruecktElevation = 1.dp
@@ -371,7 +381,7 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
         vm.erledigt(z.id, dauer)
     }
     if (zeigeLoeschDialog) {
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { zeigeLoeschDialog = false },
             title = { Text("Aufgabe löschen?") },
             text = { Text("„${z.titel}“ wird unwiderruflich entfernt, inklusive Verlaufseinträgen.") },
@@ -390,7 +400,7 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
 
 @Composable
 fun AnleitungDialog(z: PlanUi.PlanZeileUi, onDismiss: () -> Unit) {
-    androidx.compose.material3.AlertDialog(
+    AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(z.titel) },
         text = {
@@ -412,11 +422,11 @@ fun AnleitungDialog(z: PlanUi.PlanZeileUi, onDismiss: () -> Unit) {
 @Composable
 fun DauerDialog(schaetzung: Int, onFertig: (Int?) -> Unit) {
     var text by remember { mutableStateOf(schaetzung.toString()) }
-    androidx.compose.material3.AlertDialog(
+    AlertDialog(
         onDismissRequest = { onFertig(null) },
         title = { Text("Dauer in Minuten") },
         text = {
-            androidx.compose.material3.OutlinedTextField(
+            OutlinedTextField(
                 value = text,
                 onValueChange = { text = it.filter { c -> c.isDigit() } },
                 label = { Text("Minuten (leer = Schätzung $schaetzung Min.)") }
@@ -442,20 +452,20 @@ fun NeuTaskDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
     var hilfsmittel by remember { mutableStateOf("") }
     var anleitung by remember { mutableStateOf("") }
 
-    androidx.compose.material3.AlertDialog(
+    AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Neue Aufgabe") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                androidx.compose.material3.OutlinedTextField(titel, { titel = it }, label = { Text("Titel") })
+                OutlinedTextField(titel, { titel = it }, label = { Text("Titel") })
                 RaumDropdown(raeume, raum, onChange = { raum = it }, onRename = { alt, neu -> vm.raumUmbenennen(alt, neu) })
                 IntervallDropdown(intervall) { intervall = it }
-                androidx.compose.material3.OutlinedTextField(
+                OutlinedTextField(
                     dauer, { dauer = it.filter { c -> c.isDigit() } },
                     label = { Text("Dauer (Min.)") }
                 )
-                androidx.compose.material3.OutlinedTextField(hilfsmittel, { hilfsmittel = it }, label = { Text("Hilfsmittel (Komma)") })
-                androidx.compose.material3.OutlinedTextField(anleitung, { anleitung = it }, label = { Text("Anleitung") })
+                OutlinedTextField(hilfsmittel, { hilfsmittel = it }, label = { Text("Hilfsmittel (Komma)") })
+                OutlinedTextField(anleitung, { anleitung = it }, label = { Text("Anleitung") })
             }
         },
         confirmButton = {
@@ -492,7 +502,7 @@ fun RaumDropdown(
         modifier = Modifier
             .fillMaxWidth()
             .federPress(
-                akzent = if (auswahl.isNotBlank()) com.putzplan.app.ui.theme.raumFarbe(auswahl) else null,
+                akzent = if (auswahl.isNotBlank()) raumFarbe(auswahl) else null,
                 form = MaterialTheme.shapes.large,
                 ruheElevation = 3.dp
             )
@@ -501,7 +511,7 @@ fun RaumDropdown(
             Modifier
                 .size(12.dp)
                 .background(
-                    if (auswahl.isNotBlank()) com.putzplan.app.ui.theme.raumFarbe(auswahl)
+                    if (auswahl.isNotBlank()) raumFarbe(auswahl)
                     else MaterialTheme.colorScheme.outline,
                     CircleShape
                 )
@@ -510,13 +520,13 @@ fun RaumDropdown(
         Text(
             "Raum: ${auswahl.ifBlank { "ausw\u00e4hlen" }}",
             maxLines = 1,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis
         )
     }
 
     val alt = renameAlt
     if (zeigeDialog) {
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { zeigeDialog = false; renameAlt = null },
             title = { Text(if (alt == null) "Raum w\u00e4hlen" else "Raum umbenennen") },
             text = {
@@ -534,7 +544,7 @@ fun RaumDropdown(
                                 Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                val farbe = com.putzplan.app.ui.theme.raumFarbe(r)
+                                val farbe = raumFarbe(r)
                                 Surface(
                                     onClick = { onChange(r); zeigeDialog = false },
                                     color = farbe,
@@ -556,15 +566,15 @@ fun RaumDropdown(
                                             r,
                                             Modifier.weight(1f),
                                             style = MaterialTheme.typography.titleSmall,
-                                            color = com.putzplan.app.ui.theme.AufPastell,
+                                            color = AufPastell,
                                             maxLines = 1,
-                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                         if (r == auswahl) {
                                             Icon(
                                                 Icons.Default.Check,
                                                 contentDescription = "ausgew\u00e4hlt",
-                                                tint = com.putzplan.app.ui.theme.AufPastell
+                                                tint = AufPastell
                                             )
                                         }
                                     }
@@ -590,7 +600,7 @@ fun RaumDropdown(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            androidx.compose.material3.OutlinedTextField(
+                            OutlinedTextField(
                                 neuerRaum,
                                 { neuerRaum = it },
                                 Modifier.weight(1f),
@@ -615,7 +625,7 @@ fun RaumDropdown(
                             }
                         }
                     } else {
-                        androidx.compose.material3.OutlinedTextField(
+                        OutlinedTextField(
                             renameText,
                             { renameText = it },
                             Modifier.fillMaxWidth(),
@@ -655,12 +665,12 @@ fun RaumDropdown(
 @Composable
 fun IntervallDropdown(auswahl: String, onChange: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    androidx.compose.material3.OutlinedButton(onClick = { expanded = true }, Modifier.fillMaxWidth()) {
+    OutlinedButton(onClick = { expanded = true }, Modifier.fillMaxWidth()) {
         Text("Intervall: ${Konstanten.intervallLabel(auswahl)}")
     }
-    androidx.compose.material3.DropdownMenu(expanded, { expanded = false }) {
+    DropdownMenu(expanded, { expanded = false }) {
         Konstanten.INTERVALLE.forEach { i ->
-            androidx.compose.material3.DropdownMenuItem(text = { Text(i.label) }, onClick = { onChange(i.key); expanded = false })
+            DropdownMenuItem(text = { Text(i.label) }, onClick = { onChange(i.key); expanded = false })
         }
     }
 }
@@ -669,14 +679,14 @@ fun IntervallDropdown(auswahl: String, onChange: (String) -> Unit) {
 fun EinstellungenDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
     val aktuellerKey by vm.apiKey.collectAsState()
     var key by remember(aktuellerKey) { mutableStateOf(aktuellerKey) }
-    androidx.compose.material3.AlertDialog(
+    AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Einstellungen") },
         text = {
             Column {
                 Text("Mistral API-Key für die Foto-Analyse (pixtral):")
                 Spacer(Modifier.height(8.dp))
-                androidx.compose.material3.OutlinedTextField(key, { key = it }, label = { Text("API-Key") })
+                OutlinedTextField(key, { key = it }, label = { Text("API-Key") })
                 Text(
                     "Der Key bleibt lokal auf dem Gerät (SharedPreferences).",
                     style = MaterialTheme.typography.bodySmall

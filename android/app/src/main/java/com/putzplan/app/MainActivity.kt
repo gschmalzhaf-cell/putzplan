@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.putzplan.app.ui.PutzplanApp
 import com.putzplan.app.ui.theme.PutzplanTheme
+import androidx.compose.material3.MaterialTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,7 +38,7 @@ class MainActivity : ComponentActivity() {
                     AlertDialog(
                         onDismissRequest = { letzterCrash = null },
                         title = { Text("Letzter Absturz") },
-                        text = { Text(crash, style = androidx.compose.material3.MaterialTheme.typography.bodySmall) },
+                        text = { Text(crash, style = MaterialTheme.typography.bodySmall) },
                         confirmButton = {
                             TextButton(onClick = { letzterCrash = null }) { Text("OK") }
                         }
