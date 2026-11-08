@@ -44,6 +44,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.putzplan.app.logic.Konstanten
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import com.putzplan.app.ui.theme.raumFarbe
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Image
+import android.widget.Toast
 
 @Composable
 fun FotoTab(vm: PutzplanViewModel) {
@@ -54,20 +63,21 @@ fun FotoTab(vm: PutzplanViewModel) {
     var raum by remember { mutableStateOf("") }
 
     val fotos by vm.ausgewaehlteFotos.collectAsState()
+    val scope = rememberCoroutineScope()
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetMultipleContents()
     ) { uris ->
-        kotlinx.coroutines.MainScope().launch {
+        scope.launch {
             uris.take(8).forEach { uri ->
-                val bytes = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val bytes = withContext(Dispatchers.IO) {
                     runCatching {
                         context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                     }.getOrNull()
                 }
                 if (bytes != null && !vm.fotoHinzufuegen(bytes)) {
-                    android.widget.Toast.makeText(
-                        context, "Bild nicht lesbar oder Limit (8) erreicht", android.widget.Toast.LENGTH_SHORT
+                    Toast.makeText(
+                        context, "Bild nicht lesbar oder Limit (8) erreicht", Toast.LENGTH_SHORT
                     ).show()
                 }
             }
@@ -124,7 +134,7 @@ fun FotoTab(vm: PutzplanViewModel) {
         }
         if (fotos.isNotEmpty()) {
             Text("${fotos.size} Foto(s) ausgew\u00e4hlt", style = MaterialTheme.typography.labelLarge)
-            androidx.compose.foundation.layout.FlowRow(
+            FlowRow(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -133,15 +143,15 @@ fun FotoTab(vm: PutzplanViewModel) {
                     val bmp = remember(bytes) {
                         BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
                     }
-                    androidx.compose.foundation.layout.Box {
+                    Box {
                         if (bmp != null) {
-                            androidx.compose.foundation.Image(
+                            Image(
                                 bitmap = bmp,
                                 contentDescription = "Foto ${index + 1}",
                                 modifier = Modifier.size(96.dp)
                             )
                         }
-                        androidx.compose.material3.IconButton(
+                        IconButton(
                             onClick = { vm.fotoEntfernen(index) },
                             modifier = Modifier.align(Alignment.TopEnd)
                         ) {
@@ -283,7 +293,7 @@ fun FotoTab(vm: PutzplanViewModel) {
                             val bereits = aufgabe.titel in uebernommen
                             FilledTonalButton(
                                 modifier = Modifier.federPress(
-                                    akzent = com.putzplan.app.ui.theme.raumFarbe(
+                                    akzent = raumFarbe(
                                         a.analyse.raum.ifBlank { a.raum }.ifBlank { "Sonstiges" }
                                     ),
                                     ruheElevation = 3.dp

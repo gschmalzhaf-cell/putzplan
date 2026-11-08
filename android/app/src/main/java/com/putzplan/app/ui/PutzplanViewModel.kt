@@ -176,10 +176,6 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
         erledigt(taskId, minuten)
     }
 
-    fun stoppuhrAbbrechen() {
-        _stoppuhr.value = null
-    }
-
     fun erledigt(taskId: String, dauerMin: Int?) = viewModelScope.launch {
         repo.erledigt(taskId, dauerMin)
         _stats.value = repo.stats()
