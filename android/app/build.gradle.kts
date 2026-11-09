@@ -14,8 +14,8 @@ android {
         applicationId = "com.putzplan.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = 19
-        versionName = "1.5.4"
+        versionCode = 20
+        versionName = "2.0.0"
     }
 
     signingConfigs {
