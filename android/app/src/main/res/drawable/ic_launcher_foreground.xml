@@ -4,25 +4,37 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Besen: diagonal (45°) um die Mitte rotiert -->
     <group
-        android:translateX="30"
-        android:translateY="30">
+        android:rotation="45"
+        android:pivotX="54"
+        android:pivotY="54">
+        <!-- Stiel (dick, Creme) -->
         <path
-            android:strokeColor="#FFFFFF"
-            android:strokeWidth="5"
-            android:strokeLineCap="round"
-            android:pathData="M8,6 L26,24" />
-        <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M22,20 L42,26 C44,26.6 44.6,29.2 43,30.6 L30,42 C28.6,43.4 26.2,43 25.6,41 L20,22 Z" />
-        <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M12,40 L16,36 M18,44 L22,40 M24,48 L28,44"
-            android:strokeColor="#FFFFFF"
-            android:strokeWidth="3"
+            android:pathData="M54,32 L54,64"
+            android:strokeColor="#FFF4E0"
+            android:strokeWidth="8"
             android:strokeLineCap="round" />
+        <!-- Kopf (gross, Weiss) -->
         <path
             android:fillColor="#FFFFFF"
-            android:pathData="M40,10 L41.5,13.5 L45,15 L41.5,16.5 L40,20 L38.5,16.5 L35,15 L38.5,13.5 Z" />
+            android:pathData="M41,64 L67,64 Q69,64 69,66 L69,74 Q69,76 67,76 L41,76 Q39,76 39,74 L39,66 Q39,64 41,64 Z" />
+        <!-- Borsten (lang, abgesetzt) -->
+        <path
+            android:pathData="M47,79 L44,90 M54,79 L54,92 M61,79 L64,90"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="3.6"
+            android:strokeLineCap="round" />
     </group>
+    <!-- Funkeln (Sonnen-Gelb) -->
+    <path
+        android:pathData="M76,26 L76,46 M66,36 L86,36"
+        android:strokeColor="#F5B841"
+        android:strokeWidth="5"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M84,46 L84,58 M78,52 L90,52"
+        android:strokeColor="#F5B841"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
 </vector>
