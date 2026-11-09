@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -94,7 +95,8 @@ fun FotoTab(vm: PutzplanViewModel) {
         Spacer(Modifier.height(4.dp))
         Text("Foto aus der Wohnung analysieren", style = MaterialTheme.typography.titleLarge)
         Surface(
-            color = MaterialTheme.colorScheme.primaryContainer,
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            shape = MaterialTheme.shapes.large,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -124,6 +126,7 @@ fun FotoTab(vm: PutzplanViewModel) {
         RaumDropdown(raeume, raum, onChange = { raum = it }, onRename = { alt, neu -> vm.raumUmbenennen(alt, neu) })
         Button(
             onClick = { launcher.launch("image/*") },
+            shape = RoundedCornerShape(22.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .federPress(akzent = MaterialTheme.colorScheme.primary, ruheElevation = 4.dp)
@@ -168,6 +171,7 @@ fun FotoTab(vm: PutzplanViewModel) {
                 Button(
                     onClick = { if (raum.isNotBlank()) vm.fotoAnalysierenAlle(raum, fotos) },
                     enabled = raum.isNotBlank() && analyse !is FotoAnalyseUi.Laeuft,
+                    shape = RoundedCornerShape(22.dp),
                     modifier = Modifier
                         .weight(1f)
                         .federPress(akzent = MaterialTheme.colorScheme.secondary, ruheElevation = 4.dp)

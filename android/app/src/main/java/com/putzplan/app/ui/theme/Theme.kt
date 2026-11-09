@@ -2,8 +2,7 @@ package com.putzplan.app.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -11,74 +10,83 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-val Creme = Color(0xFFFAF3E7)
-val CremeTief = Color(0xFFF3E9D8)
-val Tinte = Color(0xFF3A3344)
+// ---- Putzplan 2.0 — eigene Design-Sprache (frei von Material-3-Expressive-Vorgaben) ----
 
-val Mint = Color(0xFF7FC8A9)
-val MintDunkel = Color(0xFF2E6B52)
-val Sonnengelb = Color(0xFFF2C94C)
-val Koralle = Color(0xFFEB6B4D)
-val Lavendel = Color(0xFF9B8CE0)
+val Tinte = Color(0xFF2B2B33)      // AufPastell-Tinte für Text auf Pastell
+val TinteSanft = Color(0xFF6E6E78)  // Sekundärtext
+val Flaeche = Color(0xFFF2F5F1)     // warmes Off-White als Basis
+val Linie = Color(0xFFE6E6EC)
+
+val Mint = Color(0xFF4E9B72)       // Primär
+val MintHell = Color(0xFFDFF3E8)
+val Aqua = Color(0xFF4FB3A6)
+val Himmel = Color(0xFF5B93D6)     // Sekundär
+val HimmelHell = Color(0xFFE1EEFB)
+val Lavendel = Color(0xFF9A8AE0)
+val LavendelHell = Color(0xFFEEE9FB)
+val Sonnen = Color(0xFFF5B841)     // Tertiär (Pause)
+val SonnenHell = Color(0xFFFFF1D0)
+val Koralle = Color(0xFFE06D6D)    // Fehler
+val KoralleHell = Color(0xFFFFE3E3)
 
 val Midnight = Color(0xFF241B3A)
 val MidnightTief = Color(0xFF2E2149)
 val Plum = Color(0xFF6C4FB3)
 
 private val Hell = lightColorScheme(
-    primary = MintDunkel,
+    primary = Mint,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFD9F0E4),
+    primaryContainer = MintHell,
     onPrimaryContainer = Color(0xFF1E4A38),
-    secondary = Plum,
+    secondary = Himmel,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE9E1FB),
-    onSecondaryContainer = Color(0xFF3D2E6B),
-    tertiary = Color(0xFFB3541E),
-    onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFFFE4D6),
-    onTertiaryContainer = Color(0xFF6B2E0F),
+    secondaryContainer = HimmelHell,
+    onSecondaryContainer = Color(0xFF1F4C77),
+    tertiary = Sonnen,
+    onTertiary = Tinte,
+    tertiaryContainer = SonnenHell,
+    onTertiaryContainer = Color(0xFF6B4E12),
     error = Koralle,
     onError = Color.White,
-    errorContainer = Color(0xFFFFDED6),
-    onErrorContainer = Color(0xFF7A2A12),
-    background = Creme,
+    errorContainer = KoralleHell,
+    onErrorContainer = Color(0xFF7A2424),
+    background = Flaeche,
     onBackground = Tinte,
-    surface = Creme,
+    surface = Flaeche,
     onSurface = Tinte,
-    surfaceVariant = CremeTief,
-    onSurfaceVariant = Color(0xFF6B5F52),
-    surfaceDim = Color(0xFFEADFCE),
-    surfaceBright = Color(0xFFFFFBF4),
-    surfaceContainerLowest = Color(0xFFFFFDF9),
-    surfaceContainerLow = Color(0xFFF8F0E3),
-    surfaceContainer = Color(0xFFF3EADB),
-    surfaceContainerHigh = Color(0xFFEDE2CF),
-    surfaceContainerHighest = Color(0xFFE7DAC5),
-    outline = Color(0xFFB3A48E),
-    outlineVariant = Color(0xFFD9CCB6),
-    inverseSurface = Color(0xFF3A3344),
-    inverseOnSurface = Creme,
-    inversePrimary = Mint
+    surfaceVariant = Color(0xFFE9EDE9),
+    onSurfaceVariant = TinteSanft,
+    surfaceDim = Color(0xFFE3E7E3),
+    surfaceBright = Color(0xFFFCFDFC),
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = Color(0xFFF8FAF7),
+    surfaceContainer = Color.White,
+    surfaceContainerHigh = Color(0xFFE9EDE9),
+    surfaceContainerHighest = Linie,
+    outline = Color(0xFFC9CDD4),
+    outlineVariant = Linie,
+    inverseSurface = Tinte,
+    inverseOnSurface = Flaeche,
+    inversePrimary = Color(0xFFA8D8C3)
 )
 
 private val Dunkel = darkColorScheme(
     primary = Color(0xFFA8D8C3),
     onPrimary = Color(0xFF14342A),
     primaryContainer = Color(0xFF2E6B52),
-    onPrimaryContainer = Color(0xFFD9F0E4),
-    secondary = Color(0xFFB9A7F0),
-    onSecondary = Color(0xFF2A1F4D),
-    secondaryContainer = Plum,
-    onSecondaryContainer = Color(0xFFE9E1FB),
-    tertiary = Color(0xFFFFB48F),
-    onTertiary = Color(0xFF5A2410),
-    tertiaryContainer = Color(0xFF7A3A1B),
-    onTertiaryContainer = Color(0xFFFFE4D6),
+    onPrimaryContainer = MintHell,
+    secondary = Color(0xFFA9C8EE),
+    onSecondary = Color(0xFF1F4C77),
+    secondaryContainer = Color(0xFF3A6AA5),
+    onSecondaryContainer = HimmelHell,
+    tertiary = Color(0xFFF8D58A),
+    onTertiary = Color(0xFF4A3410),
+    tertiaryContainer = Color(0xFF8A6A24),
+    onTertiaryContainer = SonnenHell,
     error = Color(0xFFFF9E85),
     onError = Color(0xFF5A1608),
     errorContainer = Color(0xFF8C3A22),
-    onErrorContainer = Color(0xFFFFDED6),
+    onErrorContainer = KoralleHell,
     background = Midnight,
     onBackground = Color(0xFFEDE7F7),
     surface = Midnight,
@@ -96,21 +104,20 @@ private val Dunkel = darkColorScheme(
     outlineVariant = Color(0xFF453A66),
     inverseSurface = Color(0xFFEDE7F7),
     inverseOnSurface = Color(0xFF241B3A),
-    inversePrimary = MintDunkel
+    inversePrimary = Mint
 )
 
 private val Formen = Shapes(
-    extraSmall = RoundedCornerShape(12.dp),
-    small = RoundedCornerShape(18.dp),
+    extraSmall = RoundedCornerShape(14.dp),
+    small = RoundedCornerShape(20.dp),
     medium = RoundedCornerShape(24.dp),
     large = RoundedCornerShape(28.dp),
     extraLarge = RoundedCornerShape(36.dp)
 )
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PutzplanTheme(dunkel: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    MaterialExpressiveTheme(
+    MaterialTheme(
         colorScheme = if (dunkel) Dunkel else Hell,
         shapes = Formen,
         content = content

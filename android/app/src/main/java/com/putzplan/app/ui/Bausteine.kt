@@ -3,10 +3,11 @@ package com.putzplan.app.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
@@ -14,11 +15,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.putzplan.app.ui.theme.AufPastell
 import com.putzplan.app.ui.theme.raumFarbe
 
@@ -43,28 +41,52 @@ fun FortschrittsBalken(erledigt: Int, offen: Int, allesErledigt: Boolean, modifi
     val gesamt = erledigt + offen
     val ratio = if (gesamt == 0) 1f else erledigt.toFloat() / gesamt
     val emoji = when {
-        gesamt == 0 || allesErledigt -> "\uD83C\uDF89"   // 🎉 alles geschafft
-        ratio >= 0.7f -> "\uD83D\uDE04"                    // 😄 fast fertig
-        ratio >= 0.3f -> "\uD83D\uDE3A"                    // 😺 motiviert
-        else -> "\uD83D\uDE3E"                             // 😾 gibt Gas
+        gesamt == 0 || allesErledigt -> "🎉"   // alles geschafft
+        ratio >= 0.7f -> "😄"                    // fast fertig
+        ratio >= 0.3f -> "😺"                    // motiviert
+        else -> "😾"                             // gibt Gas
     }
     val text = when {
-        gesamt == 0 -> "Noch nichts offen \u2013 leg los!"
-        allesErledigt -> "Alles erledigt! $emoji"
-        else -> "$offen Min. offen \u2013 weiter so! $emoji"
+        gesamt == 0 -> "Noch nichts offen – leg los!"
+        allesErledigt -> "Alles erledigt!"
+        else -> "$offen Min. offen – weiter so!"
     }
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(emoji, fontSize = 28.sp, textAlign = TextAlign.Center, modifier = Modifier.size(36.dp))
-            Spacer(Modifier.padding(6.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(text, style = MaterialTheme.typography.titleMedium)
-                LinearProgressIndicator(
-                    progress = { ratio },
-                    modifier = Modifier.fillMaxWidth(),
-                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+    // 2.0: weisse Fortschrittskarte im Hero mit grossen Zahlen und Balken
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        shape = MaterialTheme.shapes.large,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "Fortschritt",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "$erledigt / $gesamt Aufgaben",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Text(
+                    "${(ratio * 100).toInt()} %",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
+            LinearProgressIndicator(
+                progress = { ratio },
+                modifier = Modifier.fillMaxWidth().height(10.dp),
+                trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+            )
+            Text(
+                "$text $emoji",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
