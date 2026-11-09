@@ -180,26 +180,36 @@ fun PlanTab(vm: PutzplanViewModel) {
                 )
             }
         }
-        Surface(
-            color = MaterialTheme.colorScheme.primaryContainer,
-            shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
-            modifier = Modifier.fillMaxWidth()
+        // 2.0: Hero (Begruessung + Vorschrifts/Fortschrittsanzeige) wischt beim
+        // Scrollen der Aufgaben mit nach oben weg und gibt Platz zurueck.
+        LazyColumn(
+            contentPadding = PaddingValues(
+                horizontal = 16.dp, vertical = 4.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Moin \uD83D\uDC4B", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-                Text("Dein Wochenplan", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface)
-                val stats by vm.stats.collectAsState()
-                FortschrittsBalken(
-                    erledigt = stats?.gesamtErledigt ?: 0,
-                    offen = plan.gesamtMinutenOffen,
-                    allesErledigt = plan.allesErledigt
-                )
+            item {
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("Moin \uD83D\uDC4B", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                        Text("Dein Wochenplan", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface)
+                        val stats by vm.stats.collectAsState()
+                        FortschrittsBalken(
+                            erledigt = stats?.gesamtErledigt ?: 0,
+                            offen = plan.gesamtMinutenOffen,
+                            allesErledigt = plan.allesErledigt
+                        )
+                    }
+                }
             }
-        }
-        Spacer(Modifier.height(12.dp))
-        if (plan.zeilen.isEmpty() && !plan.lade) {
-            Column(
-                Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
+            if (plan.zeilen.isEmpty() && !plan.lade) {
+                item {
+                    Column(
+                        Modifier.padding(vertical = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
@@ -211,15 +221,10 @@ fun PlanTab(vm: PutzplanViewModel) {
                     "Lege über „Neue Aufgabe“ unten rechts die erste Aufgabe an – der Raum wird dabei automatisch erstellt.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                        )
+                    }
+                }
             }
-        }
-        LazyColumn(
-            contentPadding = PaddingValues(
-                horizontal = 16.dp, vertical = 4.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
             items(plan.zeilen, key = { it.id }) { z ->
                 TaskKarte(z, vm)
             }
