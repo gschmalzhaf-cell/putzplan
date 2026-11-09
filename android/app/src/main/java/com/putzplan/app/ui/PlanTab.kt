@@ -1,6 +1,10 @@
 package com.putzplan.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -99,6 +103,9 @@ fun PutzplanApp(vm: PutzplanViewModel = viewModel()) {
             if (tab == 0) {
                 ExtendedFloatingActionButton(
                     onClick = { zeigeNeuDialog = true },
+                    shape = RoundedCornerShape(24.dp),
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                     icon = { Icon(Icons.Default.Add, contentDescription = null) },
                     text = { Text("Neue Aufgabe") },
                     modifier = Modifier.federPress(
@@ -175,10 +182,12 @@ fun PlanTab(vm: PutzplanViewModel) {
         }
         Surface(
             color = MaterialTheme.colorScheme.primaryContainer,
-            shape = MaterialTheme.shapes.large,
+            shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+            Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Moin \uD83D\uDC4B", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Text("Dein Wochenplan", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface)
                 val stats by vm.stats.collectAsState()
                 FortschrittsBalken(
                     erledigt = stats?.gesamtErledigt ?: 0,
@@ -187,7 +196,7 @@ fun PlanTab(vm: PutzplanViewModel) {
                 )
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
         if (plan.zeilen.isEmpty() && !plan.lade) {
             Column(
                 Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
@@ -260,7 +269,19 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
                 gedruecktElevation = 1.dp
             )
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+        ) {
+            Box(
+                Modifier
+                    .padding(start = 16.dp)
+                    .width(6.dp)
+                    .fillMaxHeight()
+                    .background(raumFarbe(z.raum), RoundedCornerShape(3.dp))
+            )
+            Column(Modifier.padding(horizontal = 12.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             FlowRow(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -311,7 +332,7 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
                     ) {
                         Icon(Icons.Default.Stop, contentDescription = "Stoppuhr stoppen")
                         Spacer(Modifier.padding(2.dp))
-                        Text(zeitText)
+                        Text(zeitText, style = MaterialTheme.typography.titleMedium)
                     }
                     if (zustand.laeuft) {
                         TextButton(
@@ -372,6 +393,7 @@ fun TaskKarte(z: PlanUi.PlanZeileUi, vm: PutzplanViewModel) {
                     )
                 }
             }
+        }
         }
     }
 
