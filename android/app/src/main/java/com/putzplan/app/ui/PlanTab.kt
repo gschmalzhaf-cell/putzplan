@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Card
+import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -154,6 +155,8 @@ fun PlanTab(vm: PutzplanViewModel) {
     val plan by vm.plan.collectAsState()
     val raeume by vm.raeume.collectAsState()
     var raum by remember { mutableStateOf("alle") }
+    // 2.2: Zeitbudget-Modus ("Ich habe X Minuten")
+    var budget by remember { mutableStateOf<Int?>(null) }
 
     Column(Modifier.fillMaxSize()) {
         LazyRow(
@@ -203,6 +206,88 @@ fun PlanTab(vm: PutzplanViewModel) {
                             offen = plan.gesamtMinutenOffen,
                             allesErledigt = plan.allesErledigt
                         )
+                    }
+                }
+            }
+            // 2.2: adaptive Intervall-Vorschlaege (aus dem Lern-System)
+            items(plan.vorschlaege, key = { "v-" + it.taskId }) { v ->
+                Surface(
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            "\uD83E\uDDE0 Intervall-Vorschlag",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        Text(v.begruendung, style = MaterialTheme.typography.bodySmall)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = { vm.vorschlagUebernehmen(v.taskId) },
+                                shape = RoundedCornerShape(20.dp)
+                            ) {
+                                Text("Ubernehmen (" + v.intervallVorschlagLabel + ")")
+                            }
+                            TextButton(onClick = { vm.vorschlagAblehnen(v.taskId) }) {
+                                Text("Behalten")
+                            }
+                        }
+                    }
+                }
+            }
+            // 2.2: Zeitbudget-Modus — beste Kombination fuer die verfuegbare Zeit
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Zeitbudget:", style = MaterialTheme.typography.labelLarge)
+                        listOf(5, 10, 20, 30).forEach { minuten ->
+                            FilterChip(
+                                selected = budget == minuten,
+                                onClick = { budget = if (budget == minuten) null else minuten },
+                                label = { Text("$minuten Min.") },
+                                modifier = Modifier.federPress(ruheElevation = 2.dp)
+                            )
+                        }
+                    }
+                    budget?.let { b ->
+                        val auswahl = com.putzplan.app.logic.PlanIntelligenz.zeitplanAuswaehlen(
+                            plan.zeilen, b, { it.prioritaet }, { it.dauerMin }
+                        )
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                            shape = MaterialTheme.shapes.large,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    "Dein " + b + "-Minuten-Plan",
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                                if (auswahl.isEmpty()) {
+                                    Text(
+                                        "Keine offene Aufgabe passt in " + b + " Minuten.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                } else {
+                                    auswahl.forEach { z ->
+                                        Text(
+                                            "\u2022 " + z.titel + " (" + z.dauerMin + " Min., " + z.raum + ")",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+                                    Text(
+                                        "Gesamt: " + auswahl.sumOf { it.dauerMin } + " Min.",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

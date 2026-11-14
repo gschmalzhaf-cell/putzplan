@@ -35,8 +35,19 @@ private fun com.putzplan.app.data.Plan.toUi() = PlanUi(
             anleitung = z.task.anleitung,
             ueberfaellig = z.ueberfaellig,
             tageBis = z.tageBis,
+            prioritaet = z.prioritaet,
             erledigtZaehler = z.task.erledigt,
             durchschnittDauerMin = z.task.durchschnittDauerMin
+        )
+    },
+    vorschlaege = vorschlaege.map { v ->
+        PlanUi.VorschlagUi(
+            taskId = v.taskId,
+            titel = v.titel,
+            raum = v.raum,
+            intervallAktuellLabel = com.putzplan.app.logic.Konstanten.intervallLabel(v.intervallAktuell),
+            intervallVorschlagLabel = com.putzplan.app.logic.Konstanten.intervallLabel(v.intervallVorschlag),
+            begruendung = v.begruendung
         )
     },
     gesamtMinutenOffen = gesamtMinutenOffen,
@@ -54,6 +65,7 @@ private fun com.putzplan.app.data.HistoryEntry.toUi() = HistoryUi(
 
 data class PlanUi(
     val zeilen: List<PlanZeileUi> = emptyList(),
+    val vorschlaege: List<VorschlagUi> = emptyList(),
     val gesamtMinutenOffen: Int = 0,
     val allesErledigt: Boolean = true,
     val lade: Boolean = true
@@ -68,8 +80,18 @@ data class PlanUi(
         val anleitung: String,
         val ueberfaellig: Boolean,
         val tageBis: Long,
+        val prioritaet: Double,
         val erledigtZaehler: Int,
         val durchschnittDauerMin: Int?
+    )
+
+    data class VorschlagUi(
+        val taskId: String,
+        val titel: String,
+        val raum: String,
+        val intervallAktuellLabel: String,
+        val intervallVorschlagLabel: String,
+        val begruendung: String
     )
 }
 
@@ -105,6 +127,10 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _fotoAnalyse = MutableStateFlow<FotoAnalyseUi>(FotoAnalyseUi.Idle)
     val fotoAnalyse: StateFlow<FotoAnalyseUi> = _fotoAnalyse
+
+    // 2.2 - Foto->Plan-Kopplung: Hinweis nach Anwendung auf den Plan
+    private val _fotoPlanHinweis = MutableStateFlow<String?>(null)
+    val fotoPlanHinweis: StateFlow<String?> = _fotoPlanHinweis
 
     private val _uebernommeneFotoTitel = MutableStateFlow<Set<String>>(emptySet())
     val uebernommeneFotoTitel: StateFlow<Set<String>> = _uebernommeneFotoTitel
@@ -186,6 +212,15 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
         _stats.value = repo.stats()
     }
 
+    // 2.2 - Intelligenter Plan: adaptiven Intervall-Vorschlag annehmen/ablehnen
+    fun vorschlagUebernehmen(taskId: String) = viewModelScope.launch {
+        repo.vorschlagUebernehmen(taskId)
+    }
+
+    fun vorschlagAblehnen(taskId: String) = viewModelScope.launch {
+        repo.vorschlagAblehnen(taskId)
+    }
+
     fun loeschen(taskId: String) = viewModelScope.launch {
         repo.loeschen(taskId)
         _stats.value = repo.stats()
@@ -226,6 +261,7 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun fotoAnalyseZuruecksetzen() {
+        _fotoPlanHinweis.value = null
         _fotoAnalyse.value = FotoAnalyseUi.Idle
         _uebernommeneFotoTitel.value = emptySet()
     }
@@ -271,6 +307,8 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
                         )
                     )
                     _stats.value = repo.stats()
+                    // 2.2: Analyse wirkt sich direkt auf den Plan aus
+                    _fotoPlanHinweis.value = repo.fotoAufPlanAnwenden(raum, analyse)
                     _fotoAnalyse.value = FotoAnalyseUi.Ergebnis(raum, analyse)
                 },
                 onFailure = { e ->

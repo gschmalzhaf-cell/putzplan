@@ -65,6 +65,13 @@ interface PutzplanDao {
 
     @Query("SELECT * FROM history ORDER BY zeitpunkt DESC LIMIT 10")
     suspend fun letzteAktionen(): List<HistoryEntry>
+
+    // 2.2 — Intelligenter Plan: Lern-Daten
+    @Query("SELECT zeitpunkt FROM history WHERE taskId = :id AND aktion = 'erledigt' ORDER BY zeitpunkt ASC")
+    suspend fun erledigtZeiten(id: String): List<Long>
+
+    @Query("SELECT * FROM tasks WHERE raum = :raum")
+    suspend fun tasksInRaum(raum: String): List<Task>
 }
 
 data class RaumStat(val raum: String, val anzahl: Int)

@@ -182,6 +182,23 @@ fun FotoTab(vm: PutzplanViewModel) {
             }
         }
 
+        // 2.2: Hinweis, wie die Foto-Analyse den Plan verschoben hat
+        val planHinweis by vm.fotoPlanHinweis.collectAsState()
+        planHinweis?.let { hinweis ->
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    hinweis,
+                    Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+
         when (val a = analyse) {
             is FotoAnalyseUi.Laeuft -> {
                 Row(verticalAlignment = Alignment.CenterVertically) {

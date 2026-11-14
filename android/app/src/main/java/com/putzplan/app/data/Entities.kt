@@ -19,7 +19,10 @@ data class Task(
     val letzteDauerMin: Int?,
     val durchschnittDauerMin: Int?,
     val letzterAbschluss: Long?,
-    val naechstesFaellig: Long
+    val naechstesFaellig: Long,
+    // 2.2 — Intelligenter Plan: adaptiver Intervall-Vorschlag (gelernt aus echten Abständen)
+    val intervallVorschlag: String? = null,
+    val vorschlagBegruendung: String? = null
 )
 
 @Entity(tableName = "history")

@@ -70,3 +70,85 @@ object PlanLogik {
         return t.copy(naechstesFaellig = t.erstelltAm)
     }
 }
+
+// ============================================================================
+// 2.2 — Intelligenter & dynamischer Plan
+// ============================================================================
+
+object PlanIntelligenz {
+
+    /** Reale Abstände (Tage) zwischen aufeinanderfolgenden Abschlüssen einer Aufgabe. */
+    fun realeAbstaendeTage(erledigtZeiten: List<Long>): List<Double> =
+        erledigtZeiten.sorted().zipWithNext { a, b -> (b - a) / 86400000.0 }
+            .filter { it > 0.5 }
+
+    /**
+     * Adaptive Intervalle: Aus den realen Abständen (Median) wird das passende
+     * Intervall abgeleitet. Weicht es deutlich vom aktuellen ab, gibt es einen
+     * Vorschlag (Key + Begründung) zurück — sonst null.
+     * Lernbereit ab 3 gemessenen Abständen (= 4 Abschlüsse).
+     */
+    fun intervallVorschlag(
+        task: Task,
+        erledigtZeiten: List<Long>,
+        minAbstaende: Int = 3
+    ): Pair<String, String>? {
+        val abstaende = realeAbstaendeTage(erledigtZeiten)
+        if (abstaende.size < minAbstaende) return null
+        val median = median(abstaende)
+        val passend = Konstanten.INTERVALLE.minByOrNull {
+            Math.abs(it.days - median)
+        } ?: return null
+        if (passend.key == task.intervall) return null
+        // Nur vorschlagen, wenn der Unterschied spürbar ist (> 2 Tage Abweichung)
+        if (Math.abs(passend.days - median) > 2 || Math.abs(passend.days - (Konstanten.INTERVALL_MAP[task.intervall]?.days ?: 7)) < 2) return null
+        val begruendung = "Du erledigst \u201e${task.titel}\u201c real im Schnitt alle " +
+            "${Math.round(median)} Tage \u2013 \u201e${passend.label}\u201c passt besser zu deinem Rhythmus."
+        return passend.key to begruendung
+    }
+
+    /**
+     * Dynamische Priorität: Überfällige Aufgaben zuerst, gewichtet am
+     * Intervall (3 Tage Verspätung bei täglichem Intervall wiegt schwerer
+     * als bei jährlichem). Überfällig: Score > 100, sonst < 0.
+     */
+    fun prioritaet(task: Task, jetzt: Long = System.currentTimeMillis()): Double {
+        val faellig = if (task.naechstesFaellig > 0) task.naechstesFaellig else task.erstelltAm
+        val ivTage = (Konstanten.INTERVALL_MAP[task.intervall]?.days ?: 7).toDouble()
+        return if (faellig <= jetzt) {
+            val ueberfaelligTage = (jetzt - faellig) / 86400000.0
+            100.0 + (ueberfaelligTage / ivTage).coerceAtMost(1.0) * 50.0
+        } else {
+            val restTage = (faellig - jetzt) / 86400000.0
+            -((restTage / ivTage).coerceAtMost(1.0) * 50.0)
+        }
+    }
+
+    /**
+     * Zeitbudget-Modus: wählt aus den offenen Aufgaben die beste Kombination
+     * für das verfügbare Budget (greedy nach Priorität).
+     */
+    fun <T> zeitplanAuswaehlen(
+        zeilen: List<T>,
+        budgetMin: Int,
+        prioritaet: (T) -> Double,
+        dauer: (T) -> Int
+    ): List<T> {
+        val rest = mutableListOf<T>()
+        var budget = budgetMin
+        for (z in zeilen.sortedByDescending(prioritaet)) {
+            val d = dauer(z)
+            if (d <= budget) {
+                rest += z
+                budget -= d
+            }
+        }
+        return rest
+    }
+
+    private fun median(werte: List<Double>): Double {
+        val s = werte.sorted()
+        val n = s.size
+        return if (n % 2 == 1) s[n / 2] else (s[n / 2 - 1] + s[n / 2]) / 2.0
+    }
+}
