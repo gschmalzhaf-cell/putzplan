@@ -91,6 +91,16 @@ fun FortschrittsBalken(erledigt: Int, offen: Int, allesErledigt: Boolean, modifi
     }
 }
 
+/**
+ * 2.3 - Streak-Intelligenz: Badge, der mit genau einer weiteren Aufgabe
+ * erreicht wird (fuer die "Noch 1 Aufgabe bis ..."-Hinweiskarte).
+ */
+fun naechsterBadge(gesamtErledigt: Int): Pair<String, String>? {
+    val schwellen = listOf(1 to "Erster Putz", 7 to "Blitz-Woche", 14 to "Fenster-Profi", 30 to "Monats-Champion", 100 to "Putz-Legende")
+    val treffer = schwellen.firstOrNull { it.first == gesamtErledigt + 1 }
+    return treffer?.let { "\uD83C\uDFC1" to it.second }
+}
+
 fun streakBadges(gesamtErledigt: Int): List<Pair<String, String>> {
     val liste = mutableListOf<Pair<String, String>>()
     if (gesamtErledigt >= 1) liste += "\uD83C\uDF31" to "Erster Putz"

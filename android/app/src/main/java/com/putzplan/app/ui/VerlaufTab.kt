@@ -74,7 +74,9 @@ fun VerlaufTab(vm: PutzplanViewModel) {
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    "Weiter so, sauberer wird's nicht!",
+                                    "Wochenziel: " + s.erledigtDieseWoche + " von " +
+                                        maxOf(s.erledigtDieseWoche, s.geplantDieseWoche) +
+                                        " Aufgaben diese Woche",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

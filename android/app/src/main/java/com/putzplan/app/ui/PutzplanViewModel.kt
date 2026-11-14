@@ -141,6 +141,14 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
     private val _stats = MutableStateFlow<Stats?>(null)
     val stats: StateFlow<Stats?> = _stats
 
+    // 2.3 - Saison-/Kontext-Modul
+    val taskTitel: StateFlow<Set<String>> = repo.tasks
+        .map { liste -> liste.map { it.titel.trim().lowercase() }.toSet() }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptySet())
+
+    private val _besuchModus = MutableStateFlow(false)
+    val besuchModus: StateFlow<Boolean> = _besuchModus
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val plan: StateFlow<PlanUi> = _raumFilter
         .flatMapLatest { raum ->
@@ -219,6 +227,19 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
 
     fun vorschlagAblehnen(taskId: String) = viewModelScope.launch {
         repo.vorschlagAblehnen(taskId)
+    }
+
+    // 2.3 - Saison-/Kontext-Modul
+    fun saisonTaskAnlegen(a: com.putzplan.app.logic.SaisonLogik.SaisonAufgabe) = viewModelScope.launch {
+        repo.neuTask(
+            titel = a.titel, raum = a.raum, intervall = a.intervall, dauerMin = a.dauerMin,
+            hilfsmittel = a.hilfsmittel, anleitung = a.anleitung, erstelltAus = "saison"
+        )
+        _stats.value = repo.stats()
+    }
+
+    fun besuchModusUmschalten() {
+        _besuchModus.value = !_besuchModus.value
     }
 
     fun loeschen(taskId: String) = viewModelScope.launch {
