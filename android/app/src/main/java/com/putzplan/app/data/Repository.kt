@@ -215,11 +215,21 @@ class Repository(private val dao: PutzplanDao) {
     }
 
     suspend fun stats(): Stats = withContext(Dispatchers.IO) {
+        // 2.3 - Wochenziel: Montag 00:00 als Wochenstart
+        val kal = java.util.Calendar.getInstance()
+        kal.set(java.util.Calendar.HOUR_OF_DAY, 0); kal.set(java.util.Calendar.MINUTE, 0)
+        kal.set(java.util.Calendar.SECOND, 0); kal.set(java.util.Calendar.MILLISECOND, 0)
+        kal.set(java.util.Calendar.DAY_OF_WEEK, java.util.Calendar.MONDAY)
+        val wochenStart = kal.timeInMillis
+        kal.add(java.util.Calendar.DAY_OF_YEAR, 7)
+        val wochenEnde = kal.timeInMillis
         Stats(
             gesamtErledigt = dao.anzahlErledigt(),
             proRaum = dao.erledigtProRaum().associate { it.raum to it.anzahl },
             taskCount = dao.taskCount(),
-            fotoErkenntnisse = dao.fotoErkenntnisCount()
+            fotoErkenntnisse = dao.fotoErkenntnisCount(),
+            erledigtDieseWoche = dao.anzahlErledigtSeit(wochenStart),
+            geplantDieseWoche = dao.anzahlFaelligBis(wochenEnde).coerceAtLeast(1)
         )
     }
 

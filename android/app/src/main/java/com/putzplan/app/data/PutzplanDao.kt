@@ -66,6 +66,13 @@ interface PutzplanDao {
     @Query("SELECT * FROM history ORDER BY zeitpunkt DESC LIMIT 10")
     suspend fun letzteAktionen(): List<HistoryEntry>
 
+    // 2.3 - Wochenziel
+    @Query("SELECT COUNT(*) FROM history WHERE aktion = 'erledigt' AND zeitpunkt >= :seit")
+    suspend fun anzahlErledigtSeit(seit: Long): Int
+
+    @Query("SELECT COUNT(*) FROM tasks WHERE naechstesFaellig > 0 AND naechstesFaellig <= :bis")
+    suspend fun anzahlFaelligBis(bis: Long): Int
+
     // 2.2 — Intelligenter Plan: Lern-Daten
     @Query("SELECT zeitpunkt FROM history WHERE taskId = :id AND aktion = 'erledigt' ORDER BY zeitpunkt ASC")
     suspend fun erledigtZeiten(id: String): List<Long>
@@ -80,5 +87,8 @@ data class Stats(
     val gesamtErledigt: Int,
     val proRaum: Map<String, Int>,
     val taskCount: Int,
-    val fotoErkenntnisse: Int
+    val fotoErkenntnisse: Int,
+    // 2.3 - Wochenziel
+    val erledigtDieseWoche: Int = 0,
+    val geplantDieseWoche: Int = 0
 )

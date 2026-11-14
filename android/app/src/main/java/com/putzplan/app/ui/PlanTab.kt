@@ -157,6 +157,24 @@ fun PlanTab(vm: PutzplanViewModel) {
     var raum by remember { mutableStateOf("alle") }
     // 2.2: Zeitbudget-Modus ("Ich habe X Minuten")
     var budget by remember { mutableStateOf<Int?>(null) }
+    // 2.3: Streak-Intelligenz & Saison-/Kontext-Modul
+    val stats by vm.stats.collectAsState()
+    val besuch by vm.besuchModus.collectAsState()
+    val taskTitel by vm.taskTitel.collectAsState()
+    val monat = remember { java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) + 1 }
+    val istWochenende = remember {
+        val tag = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)
+        tag == java.util.Calendar.SATURDAY || tag == java.util.Calendar.SUNDAY
+    }
+    val saisonTips = remember(taskTitel, monat) {
+        com.putzplan.app.logic.SaisonLogik.saisonVorschlaege(monat)
+            .filter { it.titel.trim().lowercase() !in taskTitel }
+    }
+    // Besuch-Modus: in den naechsten 2 Tagen faellige Aufgaben rutschen nach oben
+    val sichtbareZeilen = if (besuch)
+        plan.zeilen.sortedByDescending { it.prioritaet + (if (it.tageBis <= 2) 200.0 else 0.0) }
+    else
+        plan.zeilen
 
     Column(Modifier.fillMaxSize()) {
         LazyRow(
@@ -291,6 +309,99 @@ fun PlanTab(vm: PutzplanViewModel) {
                     }
                 }
             }
+            // 2.3: Streak-Intelligenz - "Noch 1 Aufgabe bis ..."
+            item {
+                val badge = if (stats != null) naechsterBadge(stats!!.gesamtErledigt) else null
+                val kuerzeste = plan.zeilen.minByOrNull { it.dauerMin }
+                if (badge != null && kuerzeste != null) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = MaterialTheme.shapes.large,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                badge.first + " Noch 1 Aufgabe bis \u201e" + badge.second + "\u201c!",
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            Text(
+                                "Die kuerzeste offene Aufgabe passt jetzt: " + kuerzeste.titel +
+                                    " (" + kuerzeste.dauerMin + " Min., " + kuerzeste.raum + ")",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+            // 2.3: Kontext - Wochenende-Hinweis + Besuch-Modus
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val grosse = plan.zeilen.sortedByDescending { it.dauerMin }.take(2)
+                    if (istWochenende && grosse.isNotEmpty()) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.tertiaryContainer,
+                            shape = MaterialTheme.shapes.large,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    "\uD83C\uDF89 Wochenende - perfekt fuer die grossen Aufgaben",
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                                grosse.forEach { g ->
+                                    Text(
+                                        "\u2022 " + g.titel + " (" + g.dauerMin + " Min., " + g.raum + ")",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilterChip(
+                            selected = besuch,
+                            onClick = { vm.besuchModusUmschalten() },
+                            label = { Text("\uD83D\uDC4B Besuch?") },
+                            modifier = Modifier.federPress(ruheElevation = 2.dp)
+                        )
+                        if (besuch) {
+                            Text(
+                                "Alles in den naechsten 2 Tagen Faellige rutscht nach oben.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+            // 2.3: Saison-Tipps - saisonale Aufgaben zum Anlegen
+            items(saisonTips, key = { "saison-" + it.titel }) { a ->
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("\uD83C\uDFA7 Saison-Tipp", style = MaterialTheme.typography.labelLarge)
+                        Text(a.hinweis, style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            a.titel + " \u00b7 " + a.dauerMin + " Min. \u00b7 " +
+                                com.putzplan.app.logic.Konstanten.intervallLabel(a.intervall),
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Button(
+                            onClick = { vm.saisonTaskAnlegen(a) },
+                            shape = RoundedCornerShape(20.dp)
+                        ) {
+                            Text("Anlegen")
+                        }
+                    }
+                }
+            }
             if (plan.zeilen.isEmpty() && !plan.lade) {
                 item {
                     Column(
@@ -310,7 +421,7 @@ fun PlanTab(vm: PutzplanViewModel) {
                     }
                 }
             }
-            items(plan.zeilen, key = { it.id }) { z ->
+            items(sichtbareZeilen, key = { it.id }) { z ->
                 TaskKarte(z, vm)
             }
         }
