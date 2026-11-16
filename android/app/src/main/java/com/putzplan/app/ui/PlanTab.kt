@@ -1,6 +1,9 @@
 package com.putzplan.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
@@ -902,6 +905,7 @@ fun IntervallDropdown(auswahl: String, onChange: (String) -> Unit) {
 fun EinstellungenDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
     val aktuellerKey by vm.apiKey.collectAsState()
     var key by remember(aktuellerKey) { mutableStateOf(aktuellerKey) }
+    var zeigeReport by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Einstellungen") },
@@ -914,11 +918,71 @@ fun EinstellungenDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
                     "Der Key bleibt lokal auf dem Gerät (SharedPreferences).",
                     style = MaterialTheme.typography.bodySmall
                 )
+                Spacer(Modifier.height(12.dp))
+                TextButton(onClick = { zeigeReport = true }) {
+                    Text("📄 Report erstellen")
+                }
+                Text(
+                    "Erstellt einen Markdown-Report zum Kopieren/Teilen " +
+                        "(für Fehleranalyse und Feedback).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         },
         confirmButton = {
             TextButton(onClick = { vm.setApiKey(key); onDismiss }) { Text("Speichern") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Abbrechen") } }
+    )
+    if (zeigeReport) ReportDialog(vm) { zeigeReport = false }
+}
+
+/**
+ * 2.4 - Report-Funktion: zeigt den generierten Markdown-Report an,
+ * zum Kopieren in die Zwischenablage oder Teilen über Android-Share.
+ */
+@Composable
+fun ReportDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
+    val report by vm.report.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    androidx.compose.runtime.LaunchedEffect(Unit) { vm.reportErstellen() }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Report") },
+        text = {
+            Column(
+                Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    report ?: "Report wird erstellt ...",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val cm = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                        as android.content.ClipboardManager
+                cm.setPrimaryClip(
+                    android.content.ClipData.newPlainText("Putzplan Report", report ?: "")
+                )
+            }) { Text("Kopieren") }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = {
+                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(android.content.Intent.EXTRA_TEXT, report ?: "")
+                        putExtra(android.content.Intent.EXTRA_SUBJECT, "Putzplan Report")
+                    }
+                    context.startActivity(android.content.Intent.createChooser(send, "Report teilen"))
+                }) { Text("Teilen") }
+                TextButton(onClick = { vm.reportSchliessen(); onDismiss() }) { Text("Schliessen") }
+            }
+        }
     )
 }

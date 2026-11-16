@@ -235,4 +235,75 @@ class Repository(private val dao: PutzplanDao) {
 
     fun planFlow(raumFilter: String): Flow<Plan> =
         dao.alleTasks().map { bauePlan(it, raumFilter) }
+
+    /**
+     * 2.4 - Report-Funktion: erzeugt einen strukturierten Markdown-Report
+     * (Geraete-/App-Infos, Aufgaben, Lern-Daten, Verlauf) zur Fehleranalyse
+     * und Qualitaetsverbesserung. Keine persoenlichen Inhalte, keine API-Keys.
+     */
+    suspend fun reportErstellen(
+        appVersion: String,
+        versionCode: String,
+        androidVersion: String,
+        geraet: String,
+        apiKeyGesetzt: Boolean
+    ): String = withContext(Dispatchers.IO) {
+        val tasks = dao.tasksSnapshot()
+        val history = dao.historySnapshot(25)
+        val stats = stats()
+        val jetzt = System.currentTimeMillis()
+        val sdf = java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.GERMANY)
+
+        fun faelligText(t: Task): String {
+            val faellig = if (t.naechstesFaellig > 0) t.naechstesFaellig else t.erstelltAm
+            val tage = (faellig - jetzt) / 86400000L
+            return if (faellig <= jetzt) "seit " + (-tage) + " T. ueberfaellig"
+            else "in " + tage + " T."
+        }
+
+        buildString {
+            appendLine("# Putzplan Report")
+            appendLine()
+            appendLine("Erstellt: " + sdf.format(java.util.Date(jetzt)))
+            appendLine()
+            appendLine("## Geraet & App")
+            appendLine("- App: Putzplan v" + appVersion + " (" + versionCode + ")")
+            appendLine("- Android: " + androidVersion)
+            appendLine("- Geraet: " + geraet)
+            appendLine("- Mistral API-Key: " + (if (apiKeyGesetzt) "gesetzt" else "NICHT gesetzt"))
+            appendLine()
+            appendLine("## Statistik")
+            appendLine("- Aufgaben gesamt: " + stats.taskCount)
+            appendLine("- Erledigt gesamt: " + stats.gesamtErledigt)
+            appendLine("- Erledigt diese Woche: " + stats.erledigtDieseWoche + " / geplant: " + stats.geplantDieseWoche)
+            appendLine("- Foto-Analysen: " + stats.fotoErkenntnisse)
+            appendLine("- Raeume: " + (stats.proRaum.keys.sorted().joinToString(", ").ifBlank { "-" }))
+            appendLine()
+            appendLine("## Aufgaben (" + tasks.size + ")")
+            if (tasks.isEmpty()) appendLine("_Keine Aufgaben angelegt._")
+            tasks.forEach { t ->
+                appendLine("- **" + t.titel + "** | " + t.raum + " | " +
+                    Konstanten.intervallLabel(t.intervall) + " | " + t.dauerMin + " Min." +
+                    " | " + faelligText(t) +
+                    " | erledigt " + t.erledigt.toLong() + "x, uebersprungen " + t.uebersprungen + "x" +
+                    " | Schnitt: " + (t.durchschnittDauerMin?.toString() ?: "-") + " Min." +
+                    " | erstelltAus: " + t.erstelltAus +
+                    (if (!t.intervallVorschlag.isNullOrBlank())
+                        " | VORSCHLAG: " + t.intervallVorschlag else ""))
+            }
+            appendLine()
+            appendLine("## Letzte Aktionen (neueste zuerst)")
+            if (history.isEmpty()) appendLine("_Keine Verlaufs-Eintraege._")
+            history.forEach { h ->
+                appendLine("- " + sdf.format(java.util.Date(h.zeitpunkt)) + " | " + h.aktion + " | " +
+                    h.raum + " | " + h.titel +
+                    (h.dauerMin?.let { " | " + it + " Min." } ?: ""))
+            }
+            appendLine()
+            appendLine("## Hinweise zur Interpretation")
+            appendLine("- `ueberfaellig`-Werte > Intervalllaenge deuten auf zu kurze Intervalle hin")
+            appendLine("- `uebersprungen` hoch + `erledigt` niedrig = Intervall eventuell zu lang")
+            appendLine("- `VORSCHLAG`-Felder zeigen anstehende adaptive Intervall-Anpassungen")
+        }
+    }
 }
