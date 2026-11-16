@@ -149,6 +149,10 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
     private val _besuchModus = MutableStateFlow(false)
     val besuchModus: StateFlow<Boolean> = _besuchModus
 
+    // 2.4 - Report-Funktion (Markdown zur Fehleranalyse)
+    private val _report = MutableStateFlow<String?>(null)
+    val report: StateFlow<String?> = _report
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val plan: StateFlow<PlanUi> = _raumFilter
         .flatMapLatest { raum ->
@@ -240,6 +244,26 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
 
     fun besuchModusUmschalten() {
         _besuchModus.value = !_besuchModus.value
+    }
+
+    // 2.4 - Report-Funktion
+    fun reportErstellen() = viewModelScope.launch {
+        val app = getApplication<Application>()
+        val pi = runCatching {
+            app.packageManager.getPackageInfo(app.packageName, 0)
+        }.getOrNull()
+        _report.value = repo.reportErstellen(
+            appVersion = pi?.versionName ?: "?",
+            versionCode = pi?.versionCode?.toString() ?: "?",
+            androidVersion = "Android " + android.os.Build.VERSION.RELEASE +
+                " (SDK " + android.os.Build.VERSION.SDK_INT + ")",
+            geraet = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL,
+            apiKeyGesetzt = _apiKey.value.isNotBlank()
+        )
+    }
+
+    fun reportSchliessen() {
+        _report.value = null
     }
 
     fun loeschen(taskId: String) = viewModelScope.launch {
