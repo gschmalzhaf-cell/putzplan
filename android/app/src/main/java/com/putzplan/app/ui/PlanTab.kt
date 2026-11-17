@@ -169,6 +169,7 @@ fun PlanTab(vm: PutzplanViewModel) {
         val tag = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)
         tag == java.util.Calendar.SATURDAY || tag == java.util.Calendar.SUNDAY
     }
+    var zeigeSaison by remember { mutableStateOf(false) }
     val saisonTips = remember(taskTitel, monat) {
         com.putzplan.app.logic.SaisonLogik.saisonVorschlaege(monat)
             .filter { it.titel.trim().lowercase() !in taskTitel }
@@ -381,26 +382,53 @@ fun PlanTab(vm: PutzplanViewModel) {
                     }
                 }
             }
-            // 2.3: Saison-Tipps - saisonale Aufgaben zum Anlegen
-            items(saisonTips, key = { "saison-" + it.titel }) { a ->
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("\uD83C\uDFA7 Saison-Tipp", style = MaterialTheme.typography.labelLarge)
-                        Text(a.hinweis, style = MaterialTheme.typography.bodySmall)
-                        Text(
-                            a.titel + " \u00b7 " + a.dauerMin + " Min. \u00b7 " +
-                                com.putzplan.app.logic.Konstanten.intervallLabel(a.intervall),
-                            style = MaterialTheme.typography.titleSmall
+            // 2.3: Saison-Tipps - kompakter Chip wie der Besuch-Modus, Tipps auf Klapp
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilterChip(
+                            selected = zeigeSaison,
+                            onClick = { zeigeSaison = !zeigeSaison },
+                            label = { Text("🌱 Saison-Tipp") },
+                            modifier = Modifier.federPress(ruheElevation = 2.dp)
                         )
-                        Button(
-                            onClick = { vm.saisonTaskAnlegen(a) },
-                            shape = RoundedCornerShape(20.dp)
-                        ) {
-                            Text("Anlegen")
+                        if (!zeigeSaison && saisonTips.isNotEmpty()) {
+                            Text(
+                                saisonTips.size.toString() + " fuer diese Jahreszeit",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    if (zeigeSaison) {
+                        if (saisonTips.isEmpty()) {
+                            Text(
+                                "Alles Saison-Typische ist schon im Plan.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        saisonTips.forEach { a ->
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(a.titel, style = MaterialTheme.typography.bodyMedium)
+                                    Text(
+                                        a.hinweis + " \u00b7 " + a.dauerMin + " Min.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                TextButton(onClick = { vm.saisonTaskAnlegen(a) }) {
+                                    Text("Anlegen")
+                                }
+                            }
                         }
                     }
                 }
