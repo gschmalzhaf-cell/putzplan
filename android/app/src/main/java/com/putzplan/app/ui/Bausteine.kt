@@ -17,41 +17,61 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import com.putzplan.app.ui.theme.AufPastell
 import com.putzplan.app.ui.theme.raumFarbe
 
 @Composable
-fun Raumbadge(raum: String, modifier: Modifier = Modifier, dunkel: Boolean = false) {
+fun Raumbadge(
+    raum: String,
+    modifier: Modifier = Modifier,
+    dunkel: Boolean = isSystemInDarkTheme()
+) {
     val farbe = raumFarbe(raum, dunkel)
+    val textFarbe = if (dunkel) Color.White else AufPastell
     SuggestionChip(
         onClick = {},
         enabled = false,
         modifier = modifier,
-        label = { Text(raum, maxLines = 1, overflow = TextOverflow.Ellipsis, color = AufPastell) },
+        label = { Text(raum, maxLines = 1, overflow = TextOverflow.Ellipsis, color = textFarbe) },
         colors = SuggestionChipDefaults.suggestionChipColors(
             disabledContainerColor = farbe,
-            disabledLabelColor = AufPastell
+            disabledLabelColor = textFarbe
         ),
         border = null
     )
 }
 
 @Composable
-fun FortschrittsBalken(erledigt: Int, offen: Int, allesErledigt: Boolean, modifier: Modifier = Modifier) {
-    val gesamt = erledigt + offen
-    val ratio = if (gesamt == 0) 1f else erledigt.toFloat() / gesamt
+fun FortschrittsBalken(
+    erledigtWoche: Int,
+    offenAufgaben: Int,
+    offenMinuten: Int,
+    allesErledigt: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val gesamt = erledigtWoche + offenAufgaben
+    val ratio = when {
+        allesErledigt -> 1f
+        gesamt == 0 -> 0f
+        else -> (erledigtWoche.toFloat() / gesamt).coerceIn(0f, 1f)
+    }
     val emoji = when {
-        gesamt == 0 || allesErledigt -> "🎉"   // alles geschafft
-        ratio >= 0.7f -> "😄"                    // fast fertig
-        ratio >= 0.3f -> "😺"                    // motiviert
-        else -> "😾"                             // gibt Gas
+        allesErledigt -> "🎉"
+        gesamt == 0 -> "✨"
+        ratio >= 0.7f -> "😄"
+        ratio >= 0.3f -> "😺"
+        else -> "💪"
     }
     val text = when {
-        gesamt == 0 -> "Noch nichts offen – leg los!"
-        allesErledigt -> "Alles erledigt!"
-        else -> "$offen Min. offen – weiter so!"
+        allesErledigt -> "Alle fälligen Aufgaben erledigt!"
+        gesamt == 0 -> "Noch keine Aufgaben offen – leg los!"
+        offenMinuten > 0 -> "Noch $offenAufgaben offen (~$offenMinuten Min.) – weiter so!"
+        else -> "Alles im grünen Bereich!"
     }
-    // 2.0: weisse Fortschrittskarte im Hero mit grossen Zahlen und Balken
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
         shape = MaterialTheme.shapes.large,
@@ -61,12 +81,12 @@ fun FortschrittsBalken(erledigt: Int, offen: Int, allesErledigt: Boolean, modifi
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        "Fortschritt",
+                        "Wochenfortschritt",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "$erledigt / $gesamt Aufgaben",
+                        "$erledigtWoche / $gesamt Aufgaben",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -79,7 +99,10 @@ fun FortschrittsBalken(erledigt: Int, offen: Int, allesErledigt: Boolean, modifi
             }
             LinearProgressIndicator(
                 progress = { ratio },
-                modifier = Modifier.fillMaxWidth().height(10.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .clip(RoundedCornerShape(5.dp)),
                 trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
             )
             Text(

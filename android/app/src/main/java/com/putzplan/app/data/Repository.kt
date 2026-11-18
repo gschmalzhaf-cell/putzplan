@@ -27,6 +27,7 @@ data class Vorschlag(
 
 data class Plan(
     val zeilen: List<PlanZeile>,
+    val spaeterZeilen: List<PlanZeile> = emptyList(),
     val vorschlaege: List<Vorschlag> = emptyList(),
     val gesamtMinutenOffen: Int,
     val allesErledigt: Boolean
@@ -51,14 +52,16 @@ class Repository(private val dao: PutzplanDao) {
             val faellig = if (t.naechstesFaellig > 0) t.naechstesFaellig else t.erstelltAm
             val ueberfaellig = faellig <= jetzt
             val tageBis = (faellig - jetzt) / 86400000L + if (faellig > jetzt) 1 else 0
-            // 2.2: dynamische Prioritaet statt starrer Faelligkeits-Sortierung
+            // 2.2: dynamische Priorität statt starrer Fälligkeits-Sortierung
             PlanZeile(t, ueberfaellig, tageBis, PlanIntelligenz.prioritaet(t, jetzt))
         }.sortedByDescending { it.prioritaet }
 
         val faelligZeilen = zeilen.filter { it.ueberfaellig || it.tageBis <= 1 }
+        val spaeterZeilen = zeilen.filter { !it.ueberfaellig && it.tageBis > 1 }
+            .sortedBy { it.tageBis }
         val minuten = faelligZeilen.sumOf { it.task.dauerMin }
 
-        // 2.2: adaptive Intervall-Vorschlaege aus dem Lern-Feld der Tasks
+        // 2.2: adaptive Intervall-Vorschläge aus dem Lern-Feld der Tasks
         val vorschlaege = gefiltert
             .filter { !it.intervallVorschlag.isNullOrBlank() && it.intervallVorschlag != it.intervall }
             .map { t ->
@@ -69,7 +72,13 @@ class Repository(private val dao: PutzplanDao) {
                     begruendung = t.vorschlagBegruendung ?: ""
                 )
             }
-        return Plan(faelligZeilen, vorschlaege, minuten, gefiltert.isNotEmpty() && faelligZeilen.isEmpty())
+        return Plan(
+            zeilen = faelligZeilen,
+            spaeterZeilen = spaeterZeilen,
+            vorschlaege = vorschlaege,
+            gesamtMinutenOffen = minuten,
+            allesErledigt = gefiltert.isNotEmpty() && faelligZeilen.isEmpty()
+        )
     }
 
     suspend fun erledigt(taskId: String, dauerMin: Int?) = withContext(Dispatchers.IO) {
@@ -179,6 +188,39 @@ class Repository(private val dao: PutzplanDao) {
     suspend fun loeschen(taskId: String) = withContext(Dispatchers.IO) {
         dao.deleteTask(taskId)
         dao.deleteHistoryForTask(taskId)
+    }
+
+    suspend fun historyLoeschen(historyId: Long) = withContext(Dispatchers.IO) {
+        dao.deleteHistoryById(historyId)
+    }
+
+    suspend fun taskBearbeiten(
+        taskId: String,
+        titel: String,
+        raum: String,
+        intervall: String,
+        dauerMin: Int,
+        hilfsmittel: List<String>,
+        anleitung: String
+    ): Boolean = withContext(Dispatchers.IO) {
+        val t = dao.taskById(taskId) ?: return@withContext false
+        if (titel.isBlank() || !Konstanten.istGueltigesIntervall(intervall)) return@withContext false
+        val raumFix = raum.trim().ifBlank { "Sonstiges" }
+        val aktualisiert = t.copy(
+            titel = titel.trim(),
+            raum = raumFix,
+            intervall = intervall,
+            dauerMin = maxOf(1, dauerMin),
+            hilfsmittel = hilfsmittel.joinToString(","),
+            anleitung = anleitung.trim()
+        )
+        val mitFaelligkeit = if (t.intervall != intervall && t.letzterAbschluss != null) {
+            PlanLogik.recomputeFaelligkeit(aktualisiert)
+        } else {
+            aktualisiert
+        }
+        dao.updateTask(mitFaelligkeit)
+        true
     }
 
     suspend fun raumUmbenennen(alt: String, neu: String) = withContext(Dispatchers.IO) {

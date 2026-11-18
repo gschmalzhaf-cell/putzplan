@@ -23,23 +23,25 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 
+private fun com.putzplan.app.data.PlanZeile.toZeileUi() = PlanUi.PlanZeileUi(
+    id = task.id,
+    titel = task.titel,
+    raum = task.raum,
+    intervallKey = task.intervall,
+    intervallLabel = com.putzplan.app.logic.Konstanten.intervallLabel(task.intervall),
+    dauerMin = task.dauerMin,
+    hilfsmittel = task.hilfsmittel.split(',').filter { it.isNotBlank() },
+    anleitung = task.anleitung,
+    ueberfaellig = ueberfaellig,
+    tageBis = tageBis,
+    prioritaet = prioritaet,
+    erledigtZaehler = task.erledigt,
+    durchschnittDauerMin = task.durchschnittDauerMin
+)
+
 private fun com.putzplan.app.data.Plan.toUi() = PlanUi(
-    zeilen = zeilen.map { z ->
-        PlanUi.PlanZeileUi(
-            id = z.task.id,
-            titel = z.task.titel,
-            raum = z.task.raum,
-            intervallLabel = com.putzplan.app.logic.Konstanten.intervallLabel(z.task.intervall),
-            dauerMin = z.task.dauerMin,
-            hilfsmittel = z.task.hilfsmittel.split(',').filter { it.isNotBlank() },
-            anleitung = z.task.anleitung,
-            ueberfaellig = z.ueberfaellig,
-            tageBis = z.tageBis,
-            prioritaet = z.prioritaet,
-            erledigtZaehler = z.task.erledigt,
-            durchschnittDauerMin = z.task.durchschnittDauerMin
-        )
-    },
+    zeilen = zeilen.map { it.toZeileUi() },
+    spaeterZeilen = spaeterZeilen.map { it.toZeileUi() },
     vorschlaege = vorschlaege.map { v ->
         PlanUi.VorschlagUi(
             taskId = v.taskId,
@@ -56,6 +58,7 @@ private fun com.putzplan.app.data.Plan.toUi() = PlanUi(
 )
 
 private fun com.putzplan.app.data.HistoryEntry.toUi() = HistoryUi(
+    id = id,
     titel = titel,
     raum = raum,
     aktion = aktion,
@@ -65,6 +68,7 @@ private fun com.putzplan.app.data.HistoryEntry.toUi() = HistoryUi(
 
 data class PlanUi(
     val zeilen: List<PlanZeileUi> = emptyList(),
+    val spaeterZeilen: List<PlanZeileUi> = emptyList(),
     val vorschlaege: List<VorschlagUi> = emptyList(),
     val gesamtMinutenOffen: Int = 0,
     val allesErledigt: Boolean = true,
@@ -74,6 +78,7 @@ data class PlanUi(
         val id: String,
         val titel: String,
         val raum: String,
+        val intervallKey: String,
         val intervallLabel: String,
         val dauerMin: Int,
         val hilfsmittel: List<String>,
@@ -96,6 +101,7 @@ data class PlanUi(
 }
 
 data class HistoryUi(
+    val id: Long,
     val titel: String,
     val raum: String,
     val aktion: String,
@@ -271,6 +277,24 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
         _stats.value = repo.stats()
     }
 
+    fun historyLoeschen(historyId: Long) = viewModelScope.launch {
+        repo.historyLoeschen(historyId)
+        _stats.value = repo.stats()
+    }
+
+    fun taskBearbeiten(
+        taskId: String,
+        titel: String,
+        raum: String,
+        intervall: String,
+        dauerMin: Int,
+        hilfsmittel: List<String>,
+        anleitung: String
+    ) = viewModelScope.launch {
+        repo.taskBearbeiten(taskId, titel, raum, intervall, dauerMin, hilfsmittel, anleitung)
+        _stats.value = repo.stats()
+    }
+
     fun neuTask(
         titel: String, raum: String, intervall: String, dauerMin: Int,
         hilfsmittel: List<String>, anleitung: String
@@ -287,6 +311,32 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
             _uebernommeneFotoTitel.value = _uebernommeneFotoTitel.value + a.titel
             _stats.value = repo.stats()
         }
+    }
+
+    fun fotoAufgabenAlleUebernehmen(aufgaben: List<FotoAufgabe>, raum: String) = viewModelScope.launch {
+        val bereits = _uebernommeneFotoTitel.value
+        val neuUebernommen = mutableSetOf<String>()
+        for (a in aufgaben) {
+            if (a.titel in bereits) continue
+            val intervall = if (com.putzplan.app.logic.Konstanten.istGueltigesIntervall(a.intervall))
+                a.intervall else "woechentlich"
+            val ok = repo.neuTask(a.titel, raum, intervall, a.dauerMin, a.hilfsmittel, a.anleitung, "foto")
+            if (ok) neuUebernommen += a.titel
+        }
+        if (neuUebernommen.isNotEmpty()) {
+            _uebernommeneFotoTitel.value = bereits + neuUebernommen
+            _stats.value = repo.stats()
+        }
+    }
+
+    fun fotoHinzufuegenBitmap(bmp: Bitmap): Boolean {
+        val liste = _ausgewaehlteFotos.value
+        if (liste.size >= 8) return false
+        val out = ByteArrayOutputStream()
+        bmp.compress(Bitmap.CompressFormat.JPEG, 85, out)
+        val bytes = out.toByteArray()
+        _ausgewaehlteFotos.value = liste + runCatching { downsample(bytes) }.getOrDefault(bytes)
+        return true
     }
 
     fun fotoHinzufuegen(bytes: ByteArray): Boolean {
