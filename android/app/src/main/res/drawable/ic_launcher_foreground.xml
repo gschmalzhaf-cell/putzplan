@@ -4,37 +4,79 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Besen: diagonal (45°) um die Mitte rotiert -->
+
+    <!-- Sanfter Schlagschatten unter dem Besen -->
     <group
-        android:rotation="45"
+        android:rotation="42"
         android:pivotX="54"
-        android:pivotY="54">
-        <!-- Stiel (dick, Creme) -->
+        android:pivotY="56">
         <path
-            android:pathData="M54,32 L54,64"
-            android:strokeColor="#FFF4E0"
-            android:strokeWidth="8"
+            android:pathData="M54,26 L54,58"
+            android:strokeColor="#22000000"
+            android:strokeWidth="8.5"
             android:strokeLineCap="round" />
-        <!-- Kopf (gross, Weiss) -->
+        <path
+            android:fillColor="#22000000"
+            android:pathData="M38,57 L70,57 Q73,57 73,60 L75,83 Q75,86 72,86 L36,86 Q33,86 33,83 L35,60 Q35,57 38,57 Z" />
+    </group>
+
+    <!-- Besen: diagonal (42°) um die Mitte rotiert -->
+    <group
+        android:rotation="42"
+        android:pivotX="53"
+        android:pivotY="54">
+
+        <!-- Stiel (warmes Holz-Creme mit kleinem Aufhängeloch-Akzent) -->
+        <path
+            android:pathData="M53,24 L53,57"
+            android:strokeColor="#FFF4E0"
+            android:strokeWidth="7.5"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M51.5,25 L51.5,55"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="2"
+            android:strokeLineCap="round" />
+
+        <!-- Manschette / Kappe am Übergang zum Besenkopf -->
+        <path
+            android:fillColor="#F5B841"
+            android:pathData="M46,53 L60,53 Q62,53 62,55 L62,59 L44,59 L44,55 Q44,53 46,53 Z" />
+
+        <!-- Besenkopf / Borstenkörper (leicht trapezförmig, Creme-Weiß) -->
         <path
             android:fillColor="#FFFFFF"
-            android:pathData="M41,64 L67,64 Q69,64 69,66 L69,74 Q69,76 67,76 L41,76 Q39,76 39,74 L39,66 Q39,64 41,64 Z" />
-        <!-- Borsten (lang, abgesetzt) -->
+            android:pathData="M38,58 L68,58 Q71,58 71.5,61 L74,81 Q74.3,84 71.5,84 L34.5,84 Q31.7,84 32,81 L34.5,61 Q35,58 38,58 Z" />
+
+        <!-- Farbiges Zierband über den Borsten (Koralle/Sonnen-Akzent) -->
         <path
-            android:pathData="M47,79 L44,90 M54,79 L54,92 M61,79 L64,90"
-            android:strokeColor="#FFFFFF"
-            android:strokeWidth="3.6"
+            android:fillColor="#FFE29A"
+            android:pathData="M34.2,64 L71.8,64 L72.3,68.5 L33.7,68.5 Z" />
+
+        <!-- Borsten-Struktur (feine Kerben unten) -->
+        <path
+            android:pathData="M40,73 L38.5,83.5 M46.5,72 L45.5,83.5 M53,71.5 L53,83.5 M59.5,72 L60.5,83.5 M66,73 L67.5,83.5"
+            android:strokeColor="#DCE0E3"
+            android:strokeWidth="2.2"
             android:strokeLineCap="round" />
     </group>
-    <!-- Funkeln (Sonnen-Gelb) -->
+
+    <!-- Großer 4-zackiger Funkel-Stern oben rechts (Sonnen-Gelb) -->
     <path
-        android:pathData="M76,26 L76,46 M66,36 L86,36"
-        android:strokeColor="#F5B841"
-        android:strokeWidth="5"
-        android:strokeLineCap="round" />
+        android:fillColor="#F5B841"
+        android:pathData="M75,23 C75,30.5 77.5,33 85,33 C77.5,33 75,35.5 75,43 C75,35.5 72.5,33 65,33 C72.5,33 75,30.5 75,23 Z" />
+    <!-- Heller Glanzpunkt im großen Stern -->
     <path
-        android:pathData="M84,46 L84,58 M78,52 L90,52"
-        android:strokeColor="#F5B841"
-        android:strokeWidth="4"
-        android:strokeLineCap="round" />
+        android:fillColor="#FFF8E7"
+        android:pathData="M75,28.5 C75,31.5 76.5,33 79.5,33 C76.5,33 75,34.5 75,37.5 C75,34.5 73.5,33 70.5,33 C73.5,33 75,31.5 75,28.5 Z" />
+
+    <!-- Mittlerer 4-zackiger Funkel-Stern rechts Mitte -->
+    <path
+        android:fillColor="#FFE29A"
+        android:pathData="M83,46 C83,50.5 84.5,52 89,52 C84.5,52 83,53.5 83,58 C83,53.5 81.5,52 77,52 C81.5,52 83,50.5 83,46 Z" />
+
+    <!-- Kleiner Funkel-Stern links oben für Balance -->
+    <path
+        android:fillColor="#FFF4E0"
+        android:pathData="M31,31 C31,34.2 32.3,35.5 35.5,35.5 C32.3,35.5 31,36.8 31,40 C31,36.8 29.7,35.5 26.5,35.5 C29.7,35.5 31,34.2 31,31 Z" />
 </vector>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <group
+        android:rotation="42"
+        android:pivotX="53"
+        android:pivotY="54">
+        <!-- Stiel -->
+        <path
+            android:pathData="M53,24 L53,55"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="7.5"
+            android:strokeLineCap="round" />
+        <!-- Manschette -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M45,53 L61,53 Q63,53 63,55 L63,57.5 L43,57.5 L43,55 Q43,53 45,53 Z" />
+        <!-- Besenkopf oben -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M38,60 L68,60 Q71,60 71.5,63 L72,66 L34,66 L34.5,63 Q35,60 38,60 Z" />
+        <!-- Besenkopf Borsten unten (durch Band getrennt für klare Silhouette) -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M33.6,69.5 L72.4,69.5 L74,81 Q74.3,84 71.5,84 L34.5,84 Q31.7,84 32,81 Z" />
+    </group>
+
+    <!-- Funkel-Sterne -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M75,23 C75,30.5 77.5,33 85,33 C77.5,33 75,35.5 75,43 C75,35.5 72.5,33 65,33 C72.5,33 75,30.5 75,23 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M83,46 C83,50.5 84.5,52 89,52 C84.5,52 83,53.5 83,58 C83,53.5 81.5,52 77,52 C81.5,52 83,50.5 83,46 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M31,31 C31,34.2 32.3,35.5 35.5,35.5 C32.3,35.5 31,36.8 31,40 C31,36.8 29.7,35.5 26.5,35.5 C29.7,35.5 31,34.2 31,31 Z" />
+</vector>
