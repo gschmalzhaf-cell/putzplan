@@ -23,23 +23,25 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 
+private fun com.putzplan.app.data.PlanZeile.toZeileUi() = PlanUi.PlanZeileUi(
+    id = task.id,
+    titel = task.titel,
+    raum = task.raum,
+    intervallKey = task.intervall,
+    intervallLabel = com.putzplan.app.logic.Konstanten.intervallLabel(task.intervall),
+    dauerMin = task.dauerMin,
+    hilfsmittel = task.hilfsmittel.split(',').filter { it.isNotBlank() },
+    anleitung = task.anleitung,
+    ueberfaellig = ueberfaellig,
+    tageBis = tageBis,
+    prioritaet = prioritaet,
+    erledigtZaehler = task.erledigt,
+    durchschnittDauerMin = task.durchschnittDauerMin
+)
+
 private fun com.putzplan.app.data.Plan.toUi() = PlanUi(
-    zeilen = zeilen.map { z ->
-        PlanUi.PlanZeileUi(
-            id = z.task.id,
-            titel = z.task.titel,
-            raum = z.task.raum,
-            intervallLabel = com.putzplan.app.logic.Konstanten.intervallLabel(z.task.intervall),
-            dauerMin = z.task.dauerMin,
-            hilfsmittel = z.task.hilfsmittel.split(',').filter { it.isNotBlank() },
-            anleitung = z.task.anleitung,
-            ueberfaellig = z.ueberfaellig,
-            tageBis = z.tageBis,
-            prioritaet = z.prioritaet,
-            erledigtZaehler = z.task.erledigt,
-            durchschnittDauerMin = z.task.durchschnittDauerMin
-        )
-    },
+    zeilen = zeilen.map { it.toZeileUi() },
+    spaeterZeilen = spaeterZeilen.map { it.toZeileUi() },
     vorschlaege = vorschlaege.map { v ->
         PlanUi.VorschlagUi(
             taskId = v.taskId,
@@ -56,6 +58,7 @@ private fun com.putzplan.app.data.Plan.toUi() = PlanUi(
 )
 
 private fun com.putzplan.app.data.HistoryEntry.toUi() = HistoryUi(
+    id = id,
     titel = titel,
     raum = raum,
     aktion = aktion,
@@ -65,6 +68,7 @@ private fun com.putzplan.app.data.HistoryEntry.toUi() = HistoryUi(
 
 data class PlanUi(
     val zeilen: List<PlanZeileUi> = emptyList(),
+    val spaeterZeilen: List<PlanZeileUi> = emptyList(),
     val vorschlaege: List<VorschlagUi> = emptyList(),
     val gesamtMinutenOffen: Int = 0,
     val allesErledigt: Boolean = true,
@@ -74,6 +78,7 @@ data class PlanUi(
         val id: String,
         val titel: String,
         val raum: String,
+        val intervallKey: String,
         val intervallLabel: String,
         val dauerMin: Int,
         val hilfsmittel: List<String>,
@@ -96,6 +101,7 @@ data class PlanUi(
 }
 
 data class HistoryUi(
+    val id: Long,
     val titel: String,
     val raum: String,
     val aktion: String,
