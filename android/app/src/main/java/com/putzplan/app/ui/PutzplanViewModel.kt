@@ -271,6 +271,24 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
         _stats.value = repo.stats()
     }
 
+    fun historyLoeschen(historyId: Long) = viewModelScope.launch {
+        repo.historyLoeschen(historyId)
+        _stats.value = repo.stats()
+    }
+
+    fun taskBearbeiten(
+        taskId: String,
+        titel: String,
+        raum: String,
+        intervall: String,
+        dauerMin: Int,
+        hilfsmittel: List<String>,
+        anleitung: String
+    ) = viewModelScope.launch {
+        repo.taskBearbeiten(taskId, titel, raum, intervall, dauerMin, hilfsmittel, anleitung)
+        _stats.value = repo.stats()
+    }
+
     fun neuTask(
         titel: String, raum: String, intervall: String, dauerMin: Int,
         hilfsmittel: List<String>, anleitung: String
@@ -287,6 +305,32 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
             _uebernommeneFotoTitel.value = _uebernommeneFotoTitel.value + a.titel
             _stats.value = repo.stats()
         }
+    }
+
+    fun fotoAufgabenAlleUebernehmen(aufgaben: List<FotoAufgabe>, raum: String) = viewModelScope.launch {
+        val bereits = _uebernommeneFotoTitel.value
+        val neuUebernommen = mutableSetOf<String>()
+        for (a in aufgaben) {
+            if (a.titel in bereits) continue
+            val intervall = if (com.putzplan.app.logic.Konstanten.istGueltigesIntervall(a.intervall))
+                a.intervall else "woechentlich"
+            val ok = repo.neuTask(a.titel, raum, intervall, a.dauerMin, a.hilfsmittel, a.anleitung, "foto")
+            if (ok) neuUebernommen += a.titel
+        }
+        if (neuUebernommen.isNotEmpty()) {
+            _uebernommeneFotoTitel.value = bereits + neuUebernommen
+            _stats.value = repo.stats()
+        }
+    }
+
+    fun fotoHinzufuegenBitmap(bmp: Bitmap): Boolean {
+        val liste = _ausgewaehlteFotos.value
+        if (liste.size >= 8) return false
+        val out = ByteArrayOutputStream()
+        bmp.compress(Bitmap.CompressFormat.JPEG, 85, out)
+        val bytes = out.toByteArray()
+        _ausgewaehlteFotos.value = liste + runCatching { downsample(bytes) }.getOrDefault(bytes)
+        return true
     }
 
     fun fotoHinzufuegen(bytes: ByteArray): Boolean {

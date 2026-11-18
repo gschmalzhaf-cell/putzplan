@@ -39,6 +39,9 @@ interface PutzplanDao {
     @Query("DELETE FROM history WHERE taskId = :id")
     suspend fun deleteHistoryForTask(id: String)
 
+    @Query("DELETE FROM history WHERE id = :id")
+    suspend fun deleteHistoryById(id: Long)
+
     @Query("SELECT COUNT(*) FROM tasks")
     suspend fun taskCount(): Int
 
