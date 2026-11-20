@@ -1,4 +1,4 @@
-# Putzplan – Android-App (Kotlin)
+# Gideon's Putzplan
 
 Native Android-App für den Putzplan – **ohne Server**, komplett offline-fähig. Alle Daten liegen lokal in einer Room-Datenbank auf dem Gerät.
 
