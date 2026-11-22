@@ -259,19 +259,28 @@ class Repository(private val dao: PutzplanDao) {
     suspend fun stats(): Stats = withContext(Dispatchers.IO) {
         // 2.3 - Wochenziel: Montag 00:00 als Wochenstart
         val kal = java.util.Calendar.getInstance()
+        kal.firstDayOfWeek = java.util.Calendar.MONDAY
         kal.set(java.util.Calendar.HOUR_OF_DAY, 0); kal.set(java.util.Calendar.MINUTE, 0)
         kal.set(java.util.Calendar.SECOND, 0); kal.set(java.util.Calendar.MILLISECOND, 0)
         kal.set(java.util.Calendar.DAY_OF_WEEK, java.util.Calendar.MONDAY)
         val wochenStart = kal.timeInMillis
         kal.add(java.util.Calendar.DAY_OF_YEAR, 7)
         val wochenEnde = kal.timeInMillis
+
+        val zeitpunkte = dao.alleErledigtZeitpunkte()
+        val gewohnheiten = PlanIntelligenz.gewohnheitsAnalyse(zeitpunkte)
+
         Stats(
             gesamtErledigt = dao.anzahlErledigt(),
             proRaum = dao.erledigtProRaum().associate { it.raum to it.anzahl },
             taskCount = dao.taskCount(),
             fotoErkenntnisse = dao.fotoErkenntnisCount(),
             erledigtDieseWoche = dao.anzahlErledigtSeit(wochenStart),
-            geplantDieseWoche = dao.anzahlFaelligBis(wochenEnde).coerceAtLeast(1)
+            geplantDieseWoche = dao.anzahlFaelligBis(wochenEnde).coerceAtLeast(1),
+            wochenStreak = gewohnheiten.wochenStreak,
+            lieblingsTag = gewohnheiten.lieblingsTag,
+            lieblingsZeit = gewohnheiten.lieblingsZeit,
+            gesamtMinutenErledigt = dao.gesamtMinutenErledigt() ?: 0
         )
     }
 
@@ -280,8 +289,8 @@ class Repository(private val dao: PutzplanDao) {
 
     /**
      * 2.4 - Report-Funktion: erzeugt einen strukturierten Markdown-Report
-     * (Geraete-/App-Infos, Aufgaben, Lern-Daten, Verlauf) zur Fehleranalyse
-     * und Qualitaetsverbesserung. Keine persoenlichen Inhalte, keine API-Keys.
+     * (Geräte-/App-Infos, Aufgaben, Lern-Daten, Verlauf) zur Fehleranalyse
+     * und Qualitätsverbesserung. Keine persönlichen Inhalte, keine API-Keys.
      */
     suspend fun reportErstellen(
         appVersion: String,
@@ -318,6 +327,11 @@ class Repository(private val dao: PutzplanDao) {
             appendLine("- Aufgaben gesamt: " + stats.taskCount)
             appendLine("- Erledigt gesamt: " + stats.gesamtErledigt)
             appendLine("- Erledigt diese Woche: " + stats.erledigtDieseWoche + " / geplant: " + stats.geplantDieseWoche)
+            appendLine("- Wochen-Streak: " + stats.wochenStreak)
+            if (stats.lieblingsTag != null) {
+                appendLine("- Lieblings-Putzzeit: " + stats.lieblingsTag + (stats.lieblingsZeit?.let { " ($it)" } ?: ""))
+            }
+            appendLine("- Gesamt geputzte Zeit: " + stats.gesamtMinutenErledigt + " Min.")
             appendLine("- Foto-Analysen: " + stats.fotoErkenntnisse)
             appendLine("- Raeume: " + (stats.proRaum.keys.sorted().joinToString(", ").ifBlank { "-" }))
             appendLine()

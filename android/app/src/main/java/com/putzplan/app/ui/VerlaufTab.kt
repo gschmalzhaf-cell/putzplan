@@ -169,6 +169,52 @@ fun VerlaufTab(vm: PutzplanViewModel) {
                     ) { StatKachel(s.fotoErkenntnisse.toString(), "Foto-Scans") }
                 }
             }
+            if (s.wochenStreak > 0 || s.lieblingsTag != null || s.gesamtMinutenErledigt > 0) {
+                item {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.large,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                "🧠 Deine Putz-Gewohnheiten",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            if (s.wochenStreak > 0) {
+                                val wochenWort = if (s.wochenStreak == 1) "Woche" else "Wochen"
+                                Text(
+                                    "🔥 Aktiv seit ${s.wochenStreak} $wochenWort in Folge",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                            if (s.lieblingsTag != null) {
+                                val zeitInfo = s.lieblingsZeit?.let { " ($it)" } ?: ""
+                                Text(
+                                    "📅 Stärkster Putztag: ${s.lieblingsTag}$zeitInfo",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                            if (s.gesamtMinutenErledigt > 0) {
+                                val stunden = s.gesamtMinutenErledigt / 60
+                                val restMin = s.gesamtMinutenErledigt % 60
+                                val dauerText = if (stunden > 0) "${stunden} Std. ${restMin} Min." else "${restMin} Min."
+                                Text(
+                                    "⏱️ Insgesamt erfasste Putzzeit: $dauerText",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
         item {
             Text(

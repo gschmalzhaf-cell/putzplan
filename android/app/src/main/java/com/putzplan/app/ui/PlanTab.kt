@@ -32,6 +32,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.ExpandLess
@@ -52,6 +53,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -86,7 +88,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.putzplan.app.logic.AufgabenAssistent
 import com.putzplan.app.logic.Konstanten
+import com.putzplan.app.logic.PlanIntelligenz
 import com.putzplan.app.ui.theme.AufPastell
 import com.putzplan.app.ui.theme.raumFarbe
 import kotlinx.coroutines.delay
@@ -182,15 +186,28 @@ fun PlanTab(vm: PutzplanViewModel) {
     }
     var zeigeSaison by remember { mutableStateOf(false) }
     var zeigeSpaeter by remember { mutableStateOf(false) }
+    var nurKurz by remember { mutableStateOf(false) }
+    var zeigeSmartRunde by remember { mutableStateOf(false) }
+    val gruss = remember { PlanIntelligenz.tagesGruss() }
     val saisonTips = remember(taskTitel, monat) {
         com.putzplan.app.logic.SaisonLogik.saisonVorschlaege(monat)
             .filter { it.titel.trim().lowercase() !in taskTitel }
     }
-    // Besuch-Modus: in den nächsten 2 Tagen fällige Aufgaben rutschen nach oben
-    val sichtbareZeilen = if (besuch)
+    // Besuch-Modus & Quick-Wins-Filter (≤ 10 Min.)
+    val basisZeilen = if (besuch)
         plan.zeilen.sortedByDescending { it.prioritaet + (if (it.tageBis <= 2) 200.0 else 0.0) }
     else
         plan.zeilen
+    val sichtbareZeilen = if (nurKurz) basisZeilen.filter { it.dauerMin <= 10 } else basisZeilen
+    val smartRunde = remember(plan.zeilen) {
+        PlanIntelligenz.smartBatchVorschlag(
+            zeilen = plan.zeilen,
+            idOf = { it.id },
+            raumOf = { it.raum },
+            dauerOf = { it.dauerMin },
+            hilfsmittelOf = { it.hilfsmittel }
+        )
+    }
 
     Column(Modifier.fillMaxSize()) {
         LazyRow(
@@ -236,7 +253,7 @@ fun PlanTab(vm: PutzplanViewModel) {
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            "Moin \uD83D\uDC4B",
+                            gruss,
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -360,7 +377,7 @@ fun PlanTab(vm: PutzplanViewModel) {
                         }
                     }
 
-                    // Besuch-Chip & Saison-Chip nebeneinander in einer kompakten Zeile
+                    // Besuch-Chip, Quick-Wins-Chip & Saison-Chip nebeneinander in einer kompakten Zeile
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -369,6 +386,12 @@ fun PlanTab(vm: PutzplanViewModel) {
                             selected = besuch,
                             onClick = { vm.besuchModusUmschalten() },
                             label = { Text("\uD83D\uDC4B Besuch?") },
+                            modifier = Modifier.federPress(ruheElevation = 2.dp)
+                        )
+                        FilterChip(
+                            selected = nurKurz,
+                            onClick = { nurKurz = !nurKurz },
+                            label = { Text("⚡ ≤ 10 Min.") },
                             modifier = Modifier.federPress(ruheElevation = 2.dp)
                         )
                         FilterChip(
@@ -390,6 +413,83 @@ fun PlanTab(vm: PutzplanViewModel) {
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                    if (nurKurz) {
+                        Text(
+                            "Zeigt nur schnelle Aufgaben bis 10 Minuten – perfekt für zwischendurch.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    // 2.6: Smart-Runde (Hilfsmittel- oder Raum-Synergie)
+                    smartRunde?.let { runde ->
+                        val rundenTasks = plan.zeilen.filter { it.id in runde.taskIds }
+                        if (rundenTasks.size >= 2) {
+                            Surface(
+                                onClick = { zeigeSmartRunde = !zeigeSmartRunde },
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                shape = MaterialTheme.shapes.large,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    Modifier.padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Row(
+                                        Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text(
+                                                "✨ Smart-Runde: ${runde.titel}",
+                                                style = MaterialTheme.typography.titleSmall,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
+                                            Text(
+                                                runde.untertitel,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
+                                        }
+                                        Icon(
+                                            if (zeigeSmartRunde) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                            contentDescription = if (zeigeSmartRunde) "Einklappen" else "Ausklappen",
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    }
+                                    if (zeigeSmartRunde) {
+                                        HorizontalDivider()
+                                        rundenTasks.forEach { z ->
+                                            Row(
+                                                Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                Text(
+                                                    "• ${z.titel} (${z.raum}, ${z.dauerMin} Min.)",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                TextButton(
+                                                    onClick = { vm.erledigt(z.id, z.dauerMin) },
+                                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.TaskAlt,
+                                                        contentDescription = "Direkt abhaken",
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                    Spacer(Modifier.width(4.dp))
+                                                    Text("Erledigt", style = MaterialTheme.typography.labelMedium)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                     if (zeigeSaison) {
                         Surface(
@@ -842,14 +942,18 @@ fun DauerDialog(schaetzung: Int, onFertig: (Int?) -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NeuTaskDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
+    val context = LocalContext.current
     val raeume by vm.raeume.collectAsState()
+    val apiKey by vm.apiKey.collectAsState()
     var titel by remember { mutableStateOf("") }
     var raum by remember { mutableStateOf("") }
     var intervall by remember { mutableStateOf("woechentlich") }
     var dauer by remember { mutableStateOf("15") }
     var hilfsmittel by remember { mutableStateOf("") }
     var anleitung by remember { mutableStateOf("") }
+    var kiLaedt by remember { mutableStateOf(false) }
 
+    val offlineVorschlag = remember(titel) { AufgabenAssistent.vorschlagFuer(titel) }
     val kannSpeichern = titel.isNotBlank() && raum.isNotBlank()
 
     AlertDialog(
@@ -867,6 +971,81 @@ fun NeuTaskDialog(vm: PutzplanViewModel, onDismiss: () -> Unit) {
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+                // 2.6: Offline-Assistent schlägt automatisch passende Details vor
+                offlineVorschlag?.let { v ->
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    "✨ Smart-Vorschlag",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    "${Konstanten.intervallLabel(v.intervall)} · ${v.dauerMin} Min. · ${v.raum}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                            FilledTonalButton(
+                                onClick = {
+                                    if (raum.isBlank()) raum = v.raum
+                                    intervall = v.intervall
+                                    dauer = v.dauerMin.toString()
+                                    hilfsmittel = v.hilfsmittel.joinToString(", ")
+                                    anleitung = v.anleitung
+                                },
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text("Übernehmen", style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                    }
+                }
+                // 2.6: Optionaler KI-Assistent (wenn Mistral API-Key gesetzt ist)
+                if (apiKey.isNotBlank() && titel.trim().length >= 3) {
+                    TextButton(
+                        enabled = !kiLaedt,
+                        onClick = {
+                            kiLaedt = true
+                            vm.kiAufgabeErgaenzen(titel, raum.ifBlank { null }) { res ->
+                                kiLaedt = false
+                                res.fold(
+                                    onSuccess = { a ->
+                                        if (raum.isBlank() && a.bereich.isNotBlank()) raum = a.bereich
+                                        if (Konstanten.istGueltigesIntervall(a.intervall)) intervall = a.intervall
+                                        if (a.dauerMin > 0) dauer = a.dauerMin.toString()
+                                        if (a.hilfsmittel.isNotEmpty()) hilfsmittel = a.hilfsmittel.joinToString(", ")
+                                        if (a.anleitung.isNotBlank()) anleitung = a.anleitung
+                                    },
+                                    onFailure = { e ->
+                                        Toast.makeText(
+                                            context,
+                                            "KI-Ergänzung fehlgeschlagen: ${e.message ?: "Fehler"}",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                )
+                            }
+                        }
+                    ) {
+                        if (kiLaedt) {
+                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
+                        }
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (kiLaedt) "KI ergänzt Details …" else "Mit KI ausfüllen")
+                    }
+                }
                 RaumDropdown(
                     raeume = raeume,
                     auswahl = raum,

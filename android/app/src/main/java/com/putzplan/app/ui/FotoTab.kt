@@ -71,6 +71,7 @@ fun FotoTab(vm: PutzplanViewModel) {
     val analyse by vm.fotoAnalyse.collectAsState()
     val raeume by vm.raeume.collectAsState()
     val uebernommen by vm.uebernommeneFotoTitel.collectAsState()
+    val vorhandeneTitel by vm.taskTitel.collectAsState()
     val dunkel = isSystemInDarkTheme()
     var raum by remember { mutableStateOf("") }
 
@@ -372,7 +373,9 @@ fun FotoTab(vm: PutzplanViewModel) {
                             )
                         }
                         if (a.analyse.aufgaben.isNotEmpty()) {
-                            val offeneAufgaben = a.analyse.aufgaben.filter { it.titel !in uebernommen }
+                            val offeneAufgaben = a.analyse.aufgaben.filter {
+                                it.titel !in uebernommen && it.titel.trim().lowercase() !in vorhandeneTitel
+                            }
                             Row(
                                 Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -390,7 +393,7 @@ fun FotoTab(vm: PutzplanViewModel) {
                                     ) {
                                         Icon(Icons.Default.DoneAll, contentDescription = null)
                                         Spacer(Modifier.width(4.dp))
-                                        Text("Alle übernehmen")
+                                        Text("Alle übernehmen (${offeneAufgaben.size})")
                                     }
                                 }
                             }
@@ -424,7 +427,9 @@ fun FotoTab(vm: PutzplanViewModel) {
                             if (aufgabe.anleitung.isNotBlank()) {
                                 Text(aufgabe.anleitung, style = MaterialTheme.typography.bodySmall)
                             }
-                            val bereits = aufgabe.titel in uebernommen
+                            val bereitsUebernommen = aufgabe.titel in uebernommen
+                            val schonImPlan = aufgabe.titel.trim().lowercase() in vorhandeneTitel
+                            val bereits = bereitsUebernommen || schonImPlan
                             FilledTonalButton(
                                 modifier = Modifier.federPress(
                                     akzent = raumFarbe(zielRaum, dunkel),
@@ -440,7 +445,13 @@ fun FotoTab(vm: PutzplanViewModel) {
                                     contentDescription = null
                                 )
                                 Spacer(Modifier.padding(2.dp))
-                                Text(if (bereits) "Im Plan übernommen" else "In Plan übernehmen")
+                                Text(
+                                    when {
+                                        bereitsUebernommen -> "Im Plan übernommen"
+                                        schonImPlan -> "Bereits im Plan"
+                                        else -> "In Plan übernehmen"
+                                    }
+                                )
                             }
                         }
                     }
