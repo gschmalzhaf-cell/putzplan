@@ -145,6 +145,74 @@ class MistralVisionClient(
                 }
             }
         }
+
+    /**
+     * 2.6 — KI-Assistent für neue Aufgaben: ergänzt anhand eines Titels (und optional Raums)
+     * sinnvolles Intervall, Dauer, Hilfsmittel und eine kurze Schritt-für-Schritt-Anleitung.
+     */
+    suspend fun ergaenzeAufgabe(titel: String, raum: String? = null): Result<FotoAufgabe> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val prompt = buildString {
+                    appendLine("Du bist ein praktischer Haushalts- und Reinigungsassistent.")
+                    append("Ergänze für die Reinigungsaufgabe \"$titel\"")
+                    if (!raum.isNullOrBlank()) append(" im Raum \"$raum\"")
+                    appendLine(" realistische Details.")
+                    appendLine("Antworte AUSSCHLIESSLICH als JSON-Objekt mit genau diesem Schema:")
+                    appendLine(
+                        """
+                        {
+                          "titel": "$titel",
+                          "bereich": "passender Raumname (z.B. Küche, Bad, Wohnen, Flur, Schlafen)",
+                          "dauerMin": 15,
+                          "hilfsmittel": ["Hilfsmittel 1", "Hilfsmittel 2"],
+                          "anleitung": "Kurze, praxisnahe Schritt-für-Schritt-Anleitung (2-3 Sätze)",
+                          "intervall": "taeglich|woechentlich|zweiwoechentlich|monatlich|quartal|halbjaehrlich|jaehrlich",
+                          "prioritaet": 0.5
+                        }
+                        """.trimIndent()
+                    )
+                }
+
+                val requestJson = buildJsonObject {
+                    put("model", "mistral-small-latest")
+                    put("messages", buildJsonArray {
+                        add(buildJsonObject {
+                            put("role", "user")
+                            put("content", prompt)
+                        })
+                    })
+                    put("response_format", buildJsonObject { put("type", "json_object") })
+                    put("temperature", 0.2)
+                }.toString()
+
+                val conn = URL("https://api.mistral.ai/v1/chat/completions").openConnection()
+                    as HttpURLConnection
+                try {
+                    conn.requestMethod = "POST"
+                    conn.connectTimeout = 15000
+                    conn.readTimeout = 30000
+                    conn.doOutput = true
+                    conn.setRequestProperty("Content-Type", "application/json")
+                    conn.setRequestProperty("Authorization", "Bearer $apiKey")
+
+                    conn.outputStream.use { it.write(requestJson.toByteArray(Charsets.UTF_8)) }
+
+                    val code = conn.responseCode
+                    val antwort = (if (code in 200..299) conn.inputStream else conn.errorStream)
+                        ?.bufferedReader()?.use { it.readText() } ?: ""
+                    check(code in 200..299) {
+                        "Mistral API Fehler (HTTP $code): ${antwort.take(180)}"
+                    }
+
+                    val wrapper = json.decodeFromString<ChatResponse>(antwort)
+                    val content = wrapper.choices.firstOrNull()?.message?.content ?: "{}"
+                    json.decodeFromString<FotoAufgabe>(content)
+                } finally {
+                    conn.disconnect()
+                }
+            }
+        }
 }
 
 @Serializable

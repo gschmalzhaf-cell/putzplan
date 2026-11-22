@@ -89,6 +89,13 @@ interface PutzplanDao {
 
     @Query("SELECT * FROM tasks WHERE raum = :raum")
     suspend fun tasksInRaum(raum: String): List<Task>
+
+    // 2.6 — Gewohnheits-Analyse
+    @Query("SELECT zeitpunkt FROM history WHERE aktion = 'erledigt' ORDER BY zeitpunkt ASC")
+    suspend fun alleErledigtZeitpunkte(): List<Long>
+
+    @Query("SELECT SUM(dauerMin) FROM history WHERE aktion = 'erledigt' AND dauerMin IS NOT NULL")
+    suspend fun gesamtMinutenErledigt(): Int?
 }
 
 data class RaumStat(val raum: String, val anzahl: Int)
@@ -100,5 +107,10 @@ data class Stats(
     val fotoErkenntnisse: Int,
     // 2.3 - Wochenziel
     val erledigtDieseWoche: Int = 0,
-    val geplantDieseWoche: Int = 0
+    val geplantDieseWoche: Int = 0,
+    // 2.6 - Gewohnheits-Analyse
+    val wochenStreak: Int = 0,
+    val lieblingsTag: String? = null,
+    val lieblingsZeit: String? = null,
+    val gesamtMinutenErledigt: Int = 0
 )

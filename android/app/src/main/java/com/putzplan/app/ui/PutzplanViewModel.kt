@@ -315,9 +315,10 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
 
     fun fotoAufgabenAlleUebernehmen(aufgaben: List<FotoAufgabe>, raum: String) = viewModelScope.launch {
         val bereits = _uebernommeneFotoTitel.value
+        val vorhanden = taskTitel.value
         val neuUebernommen = mutableSetOf<String>()
         for (a in aufgaben) {
-            if (a.titel in bereits) continue
+            if (a.titel in bereits || a.titel.trim().lowercase() in vorhanden) continue
             val intervall = if (com.putzplan.app.logic.Konstanten.istGueltigesIntervall(a.intervall))
                 a.intervall else "woechentlich"
             val ok = repo.neuTask(a.titel, raum, intervall, a.dauerMin, a.hilfsmittel, a.anleitung, "foto")
@@ -327,6 +328,21 @@ class PutzplanViewModel(app: Application) : AndroidViewModel(app) {
             _uebernommeneFotoTitel.value = bereits + neuUebernommen
             _stats.value = repo.stats()
         }
+    }
+
+    // 2.6 — KI-Assistent für Aufgaben-Details im Neu-Dialog
+    fun kiAufgabeErgaenzen(
+        titel: String,
+        raum: String?,
+        onErgebnis: (Result<FotoAufgabe>) -> Unit
+    ) = viewModelScope.launch {
+        val key = _apiKey.value
+        if (key.isBlank()) {
+            onErgebnis(Result.failure(IllegalStateException("Kein Mistral API-Key gesetzt.")))
+            return@launch
+        }
+        val res = MistralVisionClient(key).ergaenzeAufgabe(titel.trim(), raum?.trim())
+        onErgebnis(res)
     }
 
     fun fotoHinzufuegenBitmap(bmp: Bitmap): Boolean {
